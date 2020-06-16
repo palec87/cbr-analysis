@@ -1,0 +1,4 @@
+# These requirements cover both testing, the library itself needs only 
+# a subset, which can be found in setup.py.
+# TODO: add more
+numpy==1.18.5

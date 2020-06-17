@@ -30,6 +30,7 @@ class Ta(Trs):
         self.reference = []
         self.load_data()
         self.save_path = self.create_save_path()
+        print('correct version of analysis.')
 
     def load_data(self):
         '''
@@ -49,7 +50,8 @@ class Ta(Trs):
         '''
         Importing .hdf5 files from Fastlab.
         '''
-        os.chdir(p.PurePath(self.dir_path))
+        print('loading fastlab TA data')
+        # os.chdir(p.PurePath(self.dir_path))
         f = h5py.File(p.PurePath(self.path), 'r')
         avg = np.array(f['Average'])
         self.data, self.data_raw = avg[1:, 1:] * 1000, avg[1:, 1:] * 1000

@@ -6,4 +6,3 @@ h5py
 pathlib
 matplotlib
 pandas
-pickle

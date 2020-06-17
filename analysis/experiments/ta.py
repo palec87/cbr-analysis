@@ -127,15 +127,17 @@ class Ta(Trs):
 
         #  import sweeps
         try:
-            sweep_files = [k for k in os.listdir(self.dir_path.joinpath('meas'))
+            sweep_files = [k
+                           for k in os.listdir(self.dir_path.joinpath('meas'))
                            if 'meas' in k]
         except NameError:
             print('No sweeps to load')
         else:
             self.n_sweeps = len(sweep_files)
             self.inc_sweeps = [1]*self.n_sweeps
-            self.sweeps = (np.loadtxt(self.dir_path.joinpath('meas',
-                                                             k))[1:, 1:].transpose()[:, :wl_last]*1000
+            self.sweeps = (np.loadtxt(
+                self.dir_path.joinpath('meas', k)
+                                      )[1:, 1:].transpose()[:, :wl_last]*1000
                            for k in sweep_files)
             if ignore_first_spec:
                 self.sweeps = [np.delete(sweep, 0, axis=0)

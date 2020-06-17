@@ -4,14 +4,15 @@ from analysis import data
 from analysis.experiments.ta import Ta
 
 
+class Test:
+    pass
+
+
 path = p.PurePath(data.__file__).parent.joinpath(
         '1_PbS_TETCA_high_tol_200um_40uW_532nm.hdf5')
+print(path)
 data = Ta(path)
 obj = Test()
-obj._t = np.linspace(0, 10, 10)
-
-class Test():
-    pass
 
 
 def test_ta_fastlab_load():
@@ -25,7 +26,32 @@ def test_ta_fastlab_load():
     assert data.t_units == 'ns'
     assert data.n_shots == 1000
 
+
 def test_t0():
-    Ta.set_t0(obj,1)
-    assert obj._t == np.linspace(-1, 9, 10)
+    obj._t = np.linspace(0, 10, 11)
+    obj.t0 = 0
+    Ta.set_t0(obj, 1)
+    assert (obj._t - np.linspace(-1, 9, 11)).all() == 0
     assert obj.t0 == 1
+
+
+def test_t02():
+    obj._t = np.linspace(-1, 9, 11)
+    obj.t0 = 1
+    Ta.set_t0(obj, -5)
+    assert (obj._t - np.linspace(4, 14, 11)).all() == 0
+    assert obj.t0 == -4
+
+
+def test_rem_bg():
+    obj.data = np.ones((10, 10)).reshape(10, 10)
+    obj._t = np.linspace(0, 9, 10)
+    Ta.rem_bg(obj, 5)
+    assert np.sum(obj.data, axis=(0, 1)) == 0
+
+
+def test_rem_region():
+    obj.data = np.ones((10, 10)).reshape(10, 10)
+    obj.wl = np.linspace(0, 9, 10)
+    Ta.rem_region(obj, 2, 7)
+    assert np.sum(obj.data, axis=(0, 1)) == 50

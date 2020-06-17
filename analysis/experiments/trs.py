@@ -84,7 +84,7 @@ class Trs(Exp):
             time-averaged spectra of all points before 'tPos'
             author DP, last change 28/04/20'''
         if sup.is_num(val):
-            idx = self.t < val
+            idx = self._t < val
             if sum(idx) == 0:
                 idx[0] = True
                 print('Warning: all time points after tPos')
@@ -94,11 +94,13 @@ class Trs(Exp):
             raise ValueError('Value has to be numeric, not a string.')
 
     def rem_region(self, wl_min, wl_max):
-        '''removes spectral region of 2D data
+        '''set data to 0 for spectral region of 2D data
+         - on the half-open interval [wl_min, wl_max)
         author DP, last change 28/04/20'''
         if sup.is_num(wl_min) and sup.is_num(wl_max):
-            i_wl_min, i_wl_max = sup.get_idx([wl_min, wl_max], axis=self.wl)
-            self.data[:, i_wl_min:i_wl_max] = 0
+            i_min, i_max = sup.get_idx(wl_min, wl_max, axis=self.wl)
+            print(self.wl[i_min], self.wl[i_max], self.wl)
+            self.data[:, i_min:i_max] = 0
         else:
             raise ValueError('Value has to be numeric, not a string.')
 

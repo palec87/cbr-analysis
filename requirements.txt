@@ -5,4 +5,5 @@ numpy==1.18.5
 h5py
 pathlib
 matplotlib
-pytest
+pandas
+pickle

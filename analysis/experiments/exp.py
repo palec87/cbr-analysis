@@ -18,6 +18,7 @@ class Exp():
     def __init__(self, dir_save=None):
         self.info = f'Class instance of {self.__class__}'
         self.data = None
+        self.error = []
         self.path = None
         self.save_path = dir_save
         # figures

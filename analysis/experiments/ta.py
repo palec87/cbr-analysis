@@ -26,7 +26,8 @@ class Ta(Trs):
         self.info = 'TA experimental data'
         self.path = p.PurePath(full_path)
         self.dir_path = self.path.parent
-
+        self.probe = []
+        self.reference = []
         self.load_data()
         self.save_path = self.create_save_path()
 
@@ -49,13 +50,13 @@ class Ta(Trs):
         Importing .hdf5 files from Fastlab.
         '''
         os.chdir(p.PurePath(self.dir_path))
-        f = h5py.File(p.PurePath(self.path))
+        f = h5py.File(p.PurePath(self.path), 'r')
         avg = np.array(f['Average'])
         self.data, self.data_raw = avg[1:, 1:] * 1000, avg[1:, 1:] * 1000
         self.wl = avg[0, 1:]  # array loads transposed compared to Matlab
         self.wl_raw = self.wl
-        self.t = avg[1:, 0]
-        self.t_raw = self.t
+        self._t = avg[1:, 0]
+        self.t_raw = self._t
 
         metaD = f['Average'].attrs['time zero']
         if metaD:  # check for empty list
@@ -98,6 +99,7 @@ class Ta(Trs):
             self.probe_spe_init = self.probe[0]
             self.probe_spe_end = self.probe[-1]
 
+            self.sweeps = []
             for i in list(f['Sweeps']):
                 self.sweeps.append(np.array(f['Sweeps'][i][1:, 1:] * 1000))
         pass
@@ -136,4 +138,5 @@ class Ta(Trs):
                                                              k))[1:, 1:].transpose()[:, :wl_last]*1000
                            for k in sweep_files)
             if ignore_first_spec:
-                self.sweeps = [np.delete(sweep, 0, axis=0) for sweep in self.sweeps]
+                self.sweeps = [np.delete(sweep, 0, axis=0)
+                               for sweep in self.sweeps]

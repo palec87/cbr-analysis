@@ -22,7 +22,7 @@ class Trs(Exp):
     Time-resolved-spectroscopy class
     TODO: Fitting here
     '''
-    def __init__(self,dir_save=None):
+    def __init__(self, dir_save=None):
         super().__init__(dir_save)
         self.info = f'Class instance of {self.__class__}'
         self.path = None
@@ -68,7 +68,6 @@ class Trs(Exp):
         '''
         print('not allowed to change like this')
 
-
     def set_t0(self, val):
         '''setting t0 by given value
         If more datasets loaded, It changes
@@ -94,7 +93,6 @@ class Trs(Exp):
         else:
             raise ValueError('Value has to be numeric, not a string.')
 
-
     def rem_region(self, wl_min, wl_max):
         '''removes spectral region of 2D data
         author DP, last change 28/04/20'''
@@ -103,7 +101,6 @@ class Trs(Exp):
             self.data[:, i_wl_min:i_wl_max] = 0
         else:
             raise ValueError('Value has to be numeric, not a string.')
-
 
     def cut_wl(self, wlmin, wlmax):
         '''select wl range between wlMin and wlMax
@@ -148,8 +145,6 @@ class Trs(Exp):
             self.spe.append(np.mean(self.data[beg:end, :],
                                     axis=0))
 
-
-
     def calc_kin(self, rng):
         '''
         calculates time-averaged spectra, with timepoints defined as:
@@ -183,8 +178,6 @@ class Trs(Exp):
                     if include[i] == 1)
         self.data = newav / sum(include)
 
-
-
     def recalc(self):
         '''
         Reculculates all generated data if they exist
@@ -203,7 +196,6 @@ class Trs(Exp):
                 print(f'Calling {Trs.__dict__[method]} because data changed')
                 Trs.__dict__[method](self, self.__dict__[to_pass])
 
-
     def comp_sweep_kin(self, rng):
         '''compare kinetics from different sweeps within rng of WL
         rng = [wl1 min, wl1 max, wl2 min, wl2 max, ... wlx min, wlx max]
@@ -216,10 +208,15 @@ class Trs(Exp):
                 kin = np.mean(self.sweeps[j][:, idx[2*i]:idx[2*i+1]],
                               axis=1)
             if self.inc_sweeps[j]:
-                ax1.plot(self._t, kin, label=j, color=cmap)
+                ax1.plot(self._t, kin,
+                         label=j,
+                         color=cmap)
             else:
-                ax1.plot(self._t, kin, '--', linewidth=1, label=f'{j} not in av', color=cmap)
-        ## TODO works only for single rng.
+                ax1.plot(self._t, kin,
+                         '--', linewidth=1,
+                         label=f'{j} not in av',
+                         color=cmap)
+        # TODO works only for single rng.
         kin_av = np.mean(self.data[:, idx[2*i]:idx[2*i+1]],
                          axis=1)
         plt.plot(self._t, kin_av, linewidth=3, label='av kin')
@@ -241,42 +238,32 @@ class Trs(Exp):
                 self.sweeps[i] = -self.sweeps[i]
         # recalculating Average data
         self.new_average(self.inc_sweeps)
-    
-        
-    
-
 
     @plot.title_plot
     @plot.log_xscale
     @plot.normalize_plot
-    def plot_kin(self,**kwargs):
+    def plot_kin(self, **kwargs):
         fig_kin = plt.figure()
         for i, line in enumerate(self.kin):
             plt.plot(self._t, line, label=i)
         self.figure = fig_kin
         return fig_kin
-    
-    
-    
+
     @plot.title_plot
     @plot.log_xscale
     @plot.normalize_plot
-    def plot_spe(self,**kwargs):
+    def plot_spe(self, **kwargs):
         fig_spe = plt.figure()
         for i, line in enumerate(self.spe):
             plt.plot(self.wl, line, label=i)
         self.figure = fig_spe
         return fig_spe
 
-
-
     # def reset_def_vals(self):
     #     '''
     #     sets all values to initial default state after loading.
     #     '''
     #     return
-
-
 
     # def exp_fit(self, kin, tlim):
     #     '''

@@ -69,16 +69,16 @@ class Ta(Trs):
         metaD = f['Average'].attrs['time zero']
         if metaD:  # check for empty list
             # Set wavelength units / not stored in HDF5 file
-            self.wl_units = 'nm'
+            self.wl_unit = 'nm'
             delay = f['/Average'].attrs['delay type']
             self.delay_type = str(delay)
 
             if 'Long' in str(delay):
-                self.t_units = 'ns'
+                self.t_unit = 'ns'
             elif 'UltraShort' in str(delay):
-                self.t_units = 'fs'
+                self.t_unit = 'fs'
             elif 'Short' in str(delay):
-                self.t_units = 'ps'
+                self.t_unit = 'ps'
             else:
                 print('No delayType imported')
                 print(str(delay))

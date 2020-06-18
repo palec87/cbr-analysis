@@ -143,18 +143,18 @@ class Trs(Exp):
         else:
             raise ValueError('Value has to be numeric, not a string.')
 
-    def calc_spe(self, rng):
+    def calc_spe(self, rng: list):
         ''' calculates time-averaged spectra, with timepoints defined as:
         rng = [t1min, t1max, t2min, t2max, ... txmin, txmax]
-        output is stored in obj.spe, using the wavelength axis
-        obj.wl
+        output is stored in obj.spe
+        - wl range on closed interval [tmin, tmax]
         author DP, last change 28/04/20'''
         self.spe = []
         self.spe_rng = rng
         zipped_tuple = tuple(zip(rng[::2], rng[1::2]))
         for i in zipped_tuple:
             beg, end = sup.get_idx(*i, axis=self.t)
-            self.spe.append(np.mean(self.data[beg:end, :],
+            self.spe.append(np.mean(self.data[beg:end+1, :],
                                     axis=0))
 
     def calc_kin(self, rng):

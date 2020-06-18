@@ -38,6 +38,8 @@ class Trs(Exp):
         self.spe_rng = None
         self.tmax_id = None
         self.tmin_id = None
+        self.wlmax_id = None
+        self.wlmin_id = None
         # sweeps attributes
         self.inc_sweeps = None
         self.sweeps = None
@@ -84,7 +86,7 @@ class Trs(Exp):
             time-averaged spectra of all points before 'tPos'
             author DP, last change 28/04/20'''
         if sup.is_num(val):
-            idx = self.t < val
+            idx = self._t < val
             if sum(idx) == 0:
                 idx[0] = True
                 print('Warning: all time points after tPos')
@@ -94,22 +96,32 @@ class Trs(Exp):
             raise ValueError('Value has to be numeric, not a string.')
 
     def rem_region(self, wl_min, wl_max):
-        '''removes spectral region of 2D data
+        '''set data to 0 for spectral region of 2D data
+         - on the half-open interval [wl_min, wl_max)
         author DP, last change 28/04/20'''
         if sup.is_num(wl_min) and sup.is_num(wl_max):
-            i_wl_min, i_wl_max = sup.get_idx([wl_min, wl_max], axis=self.wl)
-            self.data[:, i_wl_min:i_wl_max] = 0
+            i_min, i_max = sup.get_idx(wl_min, wl_max, axis=self.wl)
+            print(self.wl[i_min], self.wl[i_max], self.wl)
+            self.data[:, i_min:i_max] = 0
         else:
             raise ValueError('Value has to be numeric, not a string.')
 
+    @refresh_vals
     def cut_wl(self, wlmin, wlmax):
         '''select wl range between wlMin and wlMax
-        - if more dataset loaded, 'index' dataset is changed
+        - returns closed interval [wlmin, wlmax]
         author DP, last change 28/04/20'''
         if sup.is_num(wlmin) and sup.is_num(wlmax):
             imn, imx = sup.get_idx(wlmin, wlmax, axis=self.wl)
             self.wl = self.wl[imn:imx+1]
             self.data = self.data[:, imn:imx+1]
+            try:
+                self.sweeps = [self.sweeps[i][:, imn:imx+1]
+                               for i in range(self.n_sweeps)]
+            except:
+                print('No sweeps')
+            self.wlmax_id = imx + 1
+            self.wlmin_id = imn
         else:
             raise ValueError('Value has to be numeric, not a string.')
 
@@ -119,7 +131,7 @@ class Trs(Exp):
         author DP, last change 28/04/20'''
         if sup.is_num(tmin) and sup.is_num(tmax):
             imn, imx = sup.get_idx(tmin, tmax, axis=self._t)
-            self._t = self._t[imn:imx + 1]
+            self._t = self._t[imn:imx+1]
             self.data = self.data[imn:imx+1, :]
             try:
                 self.sweeps = [self.sweeps[i][imn:imx+1, :]
@@ -131,18 +143,18 @@ class Trs(Exp):
         else:
             raise ValueError('Value has to be numeric, not a string.')
 
-    def calc_spe(self, rng):
+    def calc_spe(self, rng: list):
         ''' calculates time-averaged spectra, with timepoints defined as:
         rng = [t1min, t1max, t2min, t2max, ... txmin, txmax]
-        output is stored in obj.spe, using the wavelength axis
-        obj.wl
+        output is stored in obj.spe
+        - wl range on closed interval [tmin, tmax]
         author DP, last change 28/04/20'''
         self.spe = []
         self.spe_rng = rng
         zipped_tuple = tuple(zip(rng[::2], rng[1::2]))
         for i in zipped_tuple:
             beg, end = sup.get_idx(*i, axis=self.t)
-            self.spe.append(np.mean(self.data[beg:end, :],
+            self.spe.append(np.mean(self.data[beg:end+1, :],
                                     axis=0))
 
     def calc_kin(self, rng):

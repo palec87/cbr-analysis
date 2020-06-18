@@ -4,7 +4,6 @@ Created on Wed Jun 10 12:55:38 2020
 
 @author: David Palecek
 """
-print('import all here.')
 from analysis.experiments.exp import Exp
 
 from analysis.experiments.static import Static

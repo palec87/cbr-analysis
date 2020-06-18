@@ -8,7 +8,7 @@ from .trs import Trs
 
 __all__ = ['Tcspc']
 
+
 class Tcspc(Trs):
     def mod_info():
         print(f'mod info from {object.__name__}')
-

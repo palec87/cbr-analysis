@@ -4,13 +4,14 @@ Created on Wed Jun 10 12:55:38 2020
 
 @author: David Palecek
 """
-from analysis.experiments.exp import Exp
+print('Hi, here is __init__ of analysis module.')
+from cbr_analysis_v0.analysis.experiments.exp import Exp
 
-from analysis.experiments.static import Static
-from analysis.experiments.trs import Trs
+from cbr_analysis_v0.analysis.experiments.static import Static
+from cbr_analysis_v0.analysis.experiments.trs import Trs
 
-from analysis.experiments.iccd import Iccd
-from analysis.experiments.plqe import Plqe
+from cbr_analysis_v0.analysis.experiments.iccd import Iccd
+from cbr_analysis_v0.analysis.experiments.plqe import Plqe
 
-from analysis.experiments.ta import Ta
-from analysis.experiments.tcspc import Tcspc
+from cbr_analysis_v0.analysis.experiments.ta import Ta
+from cbr_analysis_v0.analysis.experiments.tcspc import Tcspc

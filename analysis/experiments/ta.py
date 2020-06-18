@@ -21,15 +21,21 @@ class Ta(Trs):
     Child class of TRS (time-resolve spectroscopy)
     Handels Uberfast ps/fs and Fastlab TA files.
     '''
-    def __init__(self, full_path, dir_save=None):
+    def __init__(self, full_path=None, dir_save=None):
         super().__init__(dir_save)
         self.info = 'TA experimental data'
-        self.path = p.PurePath(full_path)
-        self.dir_path = self.path.parent
         self.probe = []
         self.reference = []
-        self.load_data()
-        self.save_path = self.create_save_path()
+        # case of providing path to data
+        if full_path is not None:
+            self.path = p.PurePath(full_path)
+            self.dir_path = self.path.parent
+            self.save_path = self.create_save_path()
+            self.load_data()
+        else:  # empty TA object
+            self.path = None
+            self.dir_path = None
+            self.save_path = None
         print('correct version of analysis.')
 
     def load_data(self):
@@ -54,7 +60,7 @@ class Ta(Trs):
         # os.chdir(p.PurePath(self.dir_path))
         f = h5py.File(p.PurePath(self.path), 'r')
         avg = np.array(f['Average'])
-        self.data, self.data_raw = avg[1:, 1:] * 1000, avg[1:, 1:] * 1000
+        self.data, self.data_raw = avg[1:, 1:]*1000, avg[1:, 1:]*1000
         self.wl = avg[0, 1:]  # array loads transposed compared to Matlab
         self.wl_raw = self.wl
         self._t = avg[1:, 0]

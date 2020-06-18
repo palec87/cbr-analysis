@@ -55,3 +55,19 @@ def test_rem_region():
     obj.wl = np.linspace(0, 9, 10)
     Ta.rem_region(obj, 2, 7)
     assert np.sum(obj.data, axis=(0, 1)) == 50
+
+
+# def test_cut_wl():
+#     obj.wl = np.linspace(0, 9, 10)
+#     Ta.cut_wl(obj, 2, 7)
+#     assert list(obj.wl) == [2, 3, 4, 5, 6, 7]
+
+
+# def test_cut_wl_sweeps():
+#     pass
+
+
+# def test_cut_t():
+#     obj._t = np.linspace(0, 9, 10)
+#     Ta.cut_t(obj, 2, 7)
+#     assert list(obj._t) == [2, 3, 4, 5, 6, 7]

@@ -38,6 +38,8 @@ class Trs(Exp):
         self.spe_rng = None
         self.tmax_id = None
         self.tmin_id = None
+        self.wlmax_id = None
+        self.wlmin_id = None
         # sweeps attributes
         self.inc_sweeps = None
         self.sweeps = None
@@ -104,14 +106,22 @@ class Trs(Exp):
         else:
             raise ValueError('Value has to be numeric, not a string.')
 
+    @refresh_vals
     def cut_wl(self, wlmin, wlmax):
         '''select wl range between wlMin and wlMax
-        - if more dataset loaded, 'index' dataset is changed
+        - returns closed interval [wlmin, wlmax]
         author DP, last change 28/04/20'''
         if sup.is_num(wlmin) and sup.is_num(wlmax):
             imn, imx = sup.get_idx(wlmin, wlmax, axis=self.wl)
             self.wl = self.wl[imn:imx+1]
             self.data = self.data[:, imn:imx+1]
+            try:
+                self.sweeps = [self.sweeps[i][:, imn:imx+1]
+                               for i in range(self.n_sweeps)]
+            except:
+                print('No sweeps')
+            self.wlmax_id = imx + 1
+            self.wlmin_id = imn
         else:
             raise ValueError('Value has to be numeric, not a string.')
 
@@ -121,7 +131,7 @@ class Trs(Exp):
         author DP, last change 28/04/20'''
         if sup.is_num(tmin) and sup.is_num(tmax):
             imn, imx = sup.get_idx(tmin, tmax, axis=self._t)
-            self._t = self._t[imn:imx + 1]
+            self._t = self._t[imn:imx+1]
             self.data = self.data[imn:imx+1, :]
             try:
                 self.sweeps = [self.sweeps[i][imn:imx+1, :]

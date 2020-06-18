@@ -37,10 +37,10 @@ def is_num(obj):
     if not, return False
     author DP, last change 28/04/20'''
     try:
-        val = int(obj)
+        _ = int(obj)
     except ValueError:
         try:
-            val = float(obj)
+            _ = float(obj)
         except ValueError:
             return False
         else:
@@ -65,16 +65,15 @@ def gen_timed_path(folder, name, suffix):
     -------
     path : TYPE
         DESCRIPTION.
-    
     '''
     timestr = time.strftime("%Y%m%d-%H%M")
     basename = timestr + name
     name = timestr + name
-    path = os.path.join(folder,basename+suffix)
+    path = os.path.join(folder, basename+suffix)
 
-    count=0        
+    count = 0
     while os.path.isfile(path):
-        path = os.path.join(folder,basename + '_' + str(count) + suffix)
+        path = os.path.join(folder, basename + '_' + str(count) + suffix)
         count += 1
     return path
 

@@ -1,7 +1,10 @@
 import pathlib as p
 import numpy as np
-from cbr_analysis_v0.analysis import data
+import cbr_analysis_v0.analysis.data as data
+# from ...data import data
+# from cbr_analysis_v0.analysis import data
 from cbr_analysis_v0.analysis.experiments.ta import Ta
+
 
 
 class Test:

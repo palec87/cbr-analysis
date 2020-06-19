@@ -6,3 +6,4 @@ h5py
 pathlib
 matplotlib
 pandas
+scipy

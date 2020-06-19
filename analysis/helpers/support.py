@@ -28,8 +28,55 @@ def get_idx(*vals, axis):
     - axis is time/wavelenght values to be converted to indexes
     - sets idx to min/max if out of bounds
     author DP, last change: 28/4/20'''
-    idx = [np.argmin(abs(axis-val)) for val in vals]
+    idx = [np.argmin(abs(np.array(axis)-val)) for val in vals]
     return idx
+
+
+def mean_subarray(array: np.ndarray,
+                  axis: int,
+                  rng=None,
+                  ax_data=None) -> np.float or np.ndarray:
+    '''
+    return mean of subarray along 'axis'
+    within the 'rng' of values in 'ax_data'.
+    Returned array 1 less dimension then 'array'
+
+    Positional arguments:
+    array -- numpy array of dimension
+    axis -- int: along which axis the mean is taken
+    rng -- range of ax_data to be averaged
+        if None, then taken as whole range
+    ax_data -- the rng is applied to this axis
+        has to have len of axis
+
+    Return:
+        array of dimension - 1 compared to array
+            float in case of 1D input
+            subarray on closed interval of rng values
+            [rng1, rng2]
+    '''
+    if axis >= len(array.shape):
+        print(f'axis with value:{axis} out of array dim:\
+              {len(array.shape)}')
+        return
+    if ax_data is None:
+        ax_data = np.linspace(0,
+                              array.shape[axis]-1,
+                              array.shape[axis]
+                              )
+    if len(ax_data) != array.shape[axis]:
+        print('Provided axis is wrong length.')
+        return
+    if rng is not None:
+        beg, end = get_idx(*rng, axis=ax_data)
+    else:
+        beg, end = 0, len(ax_data)-1
+
+    subarray = np.mean(np.take(array,
+                               indices=range(beg, end+1),
+                               axis=axis),
+                       axis=axis)
+    return subarray
 
 
 def is_num(obj):

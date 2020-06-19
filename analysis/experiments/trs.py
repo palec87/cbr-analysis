@@ -11,6 +11,7 @@ import matplotlib.cm as cm
 from ..helpers import support as sup
 from ..helpers.support import refresh_vals
 from ..modules import plotting as plot
+from .. modules import fitting as ft
 
 from .exp import Exp
 
@@ -144,25 +145,31 @@ class Trs(Exp):
             raise ValueError('Value has to be numeric, not a string.')
 
     def calc_spe(self, rng: list):
-        ''' calculates time-averaged spectra, with timepoints defined as:
+        ''' 
+        calculates time-averaged spectra, with timepoints defined as:
         rng = [t1min, t1max, t2min, t2max, ... txmin, txmax]
         output is stored in obj.spe
         - wl range on closed interval [tmin, tmax]
-        author DP, last change 28/04/20'''
+        author DP, last change 28/04/20
+        '''
         self.spe = []
         self.spe_rng = rng
         zipped_tuple = tuple(zip(rng[::2], rng[1::2]))
+
         for i in zipped_tuple:
-            beg, end = sup.get_idx(*i, axis=self.t)
-            self.spe.append(np.mean(self.data[beg:end+1, :],
-                                    axis=0))
+            mean = sup.mean_subarray(self.data,
+                                     axis=0,
+                                     rng=i,
+                                     ax_data=self._t)
+            self.spe.append(mean)
 
     def calc_kin(self, rng):
         '''
         calculates time-averaged spectra, with timepoints defined as:
         rng = [wl1 min, wl1 max, wl2 min, wl2 max, ... wlx min, wlx max]
-        the output is stored in obj.kin, using the time axis
+        the output is stored in self.kin, using the time axis
         self.t
+        - mean returned on closed interval [wlmin, wlmax]
         author DP, last change 28/04/20
         TODO: recalculation should delete fitParams I think
         '''
@@ -171,9 +178,11 @@ class Trs(Exp):
         zipped_tuple = tuple(zip(rng[::2], rng[1::2]))
 
         for i in zipped_tuple:
-            beg, end = sup.get_idx(*i, axis=self.wl)
-            self.kin.append(np.mean(self.data[:, beg:end],
-                                    axis=1))
+            mean = sup.mean_subarray(self.data,
+                                     axis=1,
+                                     rng=i,
+                                     ax_data=self.wl)
+            self.kin.append(mean)
 
     @refresh_vals
     def new_average(self, include):
@@ -202,7 +211,6 @@ class Trs(Exp):
         lookup_attr = (('kin', 'calc_kin', 'kin_rng'),
                        ('spe', 'calc_spe', 'spe_rng'),
                        ('fit_params', 'fit_kin', 'par_in'))
-
         for attr, method, to_pass in lookup_attr:
             if attr in self.__dict__ and self.__dict__[attr] is not None:
                 print(f'Calling {Trs.__dict__[method]} because data changed')
@@ -270,6 +278,33 @@ class Trs(Exp):
             plt.plot(self.wl, line, label=i)
         self.figure = fig_spe
         return fig_spe
+    
+    def fit_single_kin(self, nexp=1, rng=None, t_lims=None, **kwargs):
+        if rng is None:
+            if self.kin is None:
+                print('You have to specify range')
+                return
+        else:
+            self.calc_kin(rng)
+        data = self.kin
+
+        if t_lims is None:
+            t = self.t[self.t > 0]
+            data = [k[self.t >0] for k in data]
+        else:
+            beg, end = sup.get_idx(*t_lims, self.t)
+            t = self.t[beg:end+1]
+            data = [k[beg:end+1] for k in data]
+
+        fit = []
+        plt.figure()
+        for kin in data:
+            fit.append(ft.fit_kinetics(t, kin, nexp, const=0, **kwargs))
+            plt.plot(t, kin, 'o')
+            plt.plot(t, ft.exp_model(fit[-1].x, t, nexp))
+        plt.xscale('log')
+        plt.show()
+        return fit
 
     # def reset_def_vals(self):
     #     '''

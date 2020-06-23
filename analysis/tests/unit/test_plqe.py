@@ -13,7 +13,7 @@ path_3mes_data = p.PurePath(data.__file__
     '12',
     '12_DPA')
 
-path_3mes_data = p.PurePath(data.__file__
+path_5mes_data = p.PurePath(data.__file__
                                 ).parent.joinpath(
     '1.3',
     'TIPS_TACA')

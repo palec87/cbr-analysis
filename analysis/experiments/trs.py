@@ -280,6 +280,7 @@ class Trs(Exp):
         return fig_spe
     
     def fit_single_kin(self, nexp=1, rng=None, t_lims=None, **kwargs):
+        gl_par = kwargs.get('glob', None)
         if rng is None:
             if self.kin is None:
                 print('You have to specify range')
@@ -287,24 +288,31 @@ class Trs(Exp):
         else:
             self.calc_kin(rng)
         data = self.kin
-
-        if t_lims is None:
-            t = self.t[self.t > 0]
-            data = [k[self.t >0] for k in data]
-        else:
-            beg, end = sup.get_idx(*t_lims, self.t)
-            t = self.t[beg:end+1]
-            data = [k[beg:end+1] for k in data]
+        t, data = ft.x_limits(self.t, data, t_lims)
 
         fit = []
         plt.figure()
-        for kin in data:
-            fit.append(ft.fit_kinetics(t, kin, nexp, const=0, **kwargs))
-            plt.plot(t, kin, 'o')
-            plt.plot(t, ft.exp_model(fit[-1].x, t, nexp))
+        for i in range(len(data)):
+            fit.append(ft.fit_kinetics(t[i],
+                                       data[i], nexp, const=0,
+                                       ))
+            plt.plot(t[i], data[i], 'o')
+            plt.plot(t[i], ft.exp_model(fit[-1].x, t[i], nexp), 'k-')
         plt.xscale('log')
         plt.show()
-        return fit
+
+        if gl_par is not None:
+            fit_glob = ft.fit_kinetics_global(t, data, gl_par, nexp)
+            fit_result = ft.exp_model_gl(fit_glob.x, bool_gl=gl_par, x=t, n=nexp)
+            for i in range(len(t)):
+                plt.plot(t[i], data[i], 'o', label=i)
+                plt.plot(t[i], fit_result[i], 'k-')
+            plt.xscale('log')
+            plt.legend()
+            plt.show()
+            return fit, fit_glob
+        else:
+            return fit
 
     # def reset_def_vals(self):
     #     '''

@@ -42,7 +42,7 @@ def test_Plqe_import():
     Footer = 35
 
     data = an.Plqe(path_5mes_data,setup='CPT',filetype=FileType,delimiter = Delimiter,header=Header,footer=Footer,combine_wl=860)
-    assert data.data.shape == (777, 3)
+    assert data.data.shape == (776, 3)
     assert data.detector == 'InGaAs'
     assert data.accum == ([5,5,5,5,5])
     assert data.exposure == ([5.0, 5.0, 5.0, 5.0, 5.0])

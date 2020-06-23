@@ -30,6 +30,7 @@ class Plqe(Static):
         self.power = None
         self.center_wl = kwargs.get('center_wl', (600,))
         self.laser_wl = None
+        self.combine_wl = kwargs.get('combine_wl', None)
         # PLQE
         self.exc_wl = None
         self.pl_wl = None
@@ -158,11 +159,13 @@ class Plqe(Static):
         self.data = np.vstack(data).T
         self.data_raw = self.data.copy()
 
+
+
         if self.n_meas == 5:
             self.wl = np.vstack((wl[0],
                                  wl[2])).T
             self.wl_raw = self.wl.copy()
-            self.combine_plqe()
+            self.combine_plqe(combineWL=self.combine_wl)
         else:
             self.wl = wl[0]   # wl for all 3 measurements should be the same
             self.wl_raw = self.wl.copy()
@@ -213,16 +216,19 @@ class Plqe(Static):
         self.data = (self.data/CalibIp[:, None])  # Calibration
         self.is_cal = True
 
-    def combine_plqe(self):
-        self.combine_wl = min(self.wl[:, 1])+50
+    def combine_plqe(self,combineWL=None):
+        if type(combineWL) != int:
+            self.combine_wl = min(self.wl[:, 1])+50
+        else:
+            self._combineWL = combineWL
         #  Combine the LAS and PL measurements. Create an intermediate array
         #  (inter) with all 5 columns and later remove the PL columns
         inter = self.data_raw[self.wl_raw[:, 0] <
                               self.combine_wl, :]  # pick LAS measurement until combineWL
         inter2 = self.data_raw[self.wl_raw[:, 1] >=
                                self.combine_wl, :]  # pick PL measurement after combineWL
-        interLAS = inter[:, (0, 2, 4)]  # remove columns with with PL experiments
-        interPL = inter2[:, (1, 3, 4)]  # remove columns with LAS experiments
+        interLAS = inter[:, (0, 1, 4)]  # remove columns with with PL experiments
+        interPL = inter2[:, (2, 3, 4)]  # remove columns with LAS experiments
 
         # combine WL arrays
         self.wl = np.concatenate(((self.wl[self.wl[:, 0] <

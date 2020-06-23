@@ -81,7 +81,6 @@ class Plqe(Static):
         -------
         None.
         '''
-        print('Loading some data here and here')
         self.data_list = [k for k in os.listdir(self.dir_path)
                           if ('ON' in k or 'OFF' in k or 'NO' in k)
                           and self.file_type in k]

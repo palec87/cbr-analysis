@@ -75,10 +75,13 @@ class Ta(Trs):
 
             if 'Long' in str(delay):
                 self.t_unit = 'ns'
+                self.t_conversion = 1e-9
             elif 'UltraShort' in str(delay):
                 self.t_unit = 'fs'
+                self.t_conversion = 1e-15
             elif 'Short' in str(delay):
                 self.t_unit = 'ps'
+                self.t_conversion = 1e-12
             else:
                 print('No delayType imported')
                 print(str(delay))
@@ -131,6 +134,7 @@ class Ta(Trs):
         self._t = data[0, 1:]/1000
 
         self.t_unit = 'ps'
+        self.t_conversion = 1e-12
         self.wl_unit = 'nm'
 
         #  import sweeps

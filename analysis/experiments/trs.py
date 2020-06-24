@@ -7,6 +7,8 @@ Created on Fri Jun  5 21:02:16 2020
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import scipy.optimize as optim
+from scipy.integrate import solve_ivp, odeint
 # TODO, load fitting module
 from ..helpers import support as sup
 from ..helpers.support import refresh_vals
@@ -45,6 +47,11 @@ class Trs(Exp):
         self.inc_sweeps = None
         self.sweeps = None
         self.n_sweeps = None
+        # Fitting parameters
+        self._fitParams = None
+        self._fitData = None #store the fitted data
+        
+
 
     @property
     def t(self):
@@ -320,6 +327,124 @@ class Trs(Exp):
     def fit_ode(self, model, rng=None, t_lims=None, **kwargs):
         return
 
+    def SVD(self, plot = 'y'):
+        '''Function to perform single value decomposition on TA data, possible to plot spectral significant components, time series and sigma/s values
+        author VG last editied 1/06/2020'''
+        t = self._t[self._t>0] #predifine T larger than 0 for fitting
+        DTT = self.data.T[:,self._t>0]  # scale DTT data accordingly
+        wl = self.wl
+
+        U, S, VT = np.linalg.svd(DTT,full_matrices=False) #SVD
+        P = U * S**0.5 #Spectral signif. components
+        T = S**0.5 * VT.T #Series signif. components
+        
+
+        if plot == 'y' or plot == 'yes':
+            self._figure = plt.figure(figsize = [12,4.5])
+            ax1 = self._figure.add_subplot(131)
+            ax1.semilogy(S,'o') # Plot s/sigma values
+            ax1.set_title('S-values')
+            
+            ax2 = self._figure.add_subplot(132)
+            ax2.plot(wl,P) # plot spectral significant components
+            ax2.set_title('Spectral Significant Components P\n ($P = U * \sqrt{S}$)')
+            
+            ax3 = self._figure.add_subplot(133)
+            ax3.plot(T) #plot time series significant componentd
+            ax3.set_title('Timeseries of Significant Components T\n ($T = \sqrt{S}*V\'$)')
+
+    def SVDfit(self,components = 2,function=None,k0=[],pos=[],C0=[]):
+        '''Fiting procedure using SVD extracted singificant components, to be implemented. Author VG, last edited 24/6/2020'''
+        # TODO, Use functions in fitting.py for error optimization
+        # and define a func(x,p,nexp,d1=[],d2=[]) as intrinsic function if no external function is supplied
+        ### Inplement a function to check what time units are used, and make sure time is in seconds
+        #timeconversion = 1e-9 #
+        t = self._t[self._t>0]*self.t_conversion #predifine T larger than 0 for fitting
+        DTT = self.data.T[:,self._t>0]  # scale DTT data accordingly
+        wl = self.wl
+        self.checkFitParams()
+
+        U, S, VT = np.linalg.svd(DTT,full_matrices=False) #SVD
+        P = U * S**0.5 #Spectral signif. components
+        T = S**0.5 * VT.T #Series signif. components
+        PP = P[:,:components] 
+        TT = T[:,:components]
+
+        if function == None:
+            nexp = components #Set standard exponetial decay with n components the same as spectral components
+            print('Not implemented yet - please supply function')
+        else:
+            k = k0;
+            var = k[pos]
+            self._fit = optim.minimize(ft.rotation,var,args=(k,pos,TT,PP,DTT,C0,t,function),method='nelder-mead',options={'xatol': 1e-6, 'disp': True, 'maxiter':1000})
+            self._fitParams.append(self._fit.x)
+            ### ideally this can be obtained directly from ft.rotation() or rotation function is moved here and global variables is used...
+            k = self._fit.x
+            C = odeint(function,C0,t,args=(k,)) #calculate concentration from model
+            R = T.T @ np.linalg.pinv(C.T) #calculat rotation matrix
+            V = P @ R; # calculate spectral components
+            calc = V @ C.T #calculate 2D map
+            res = (DTT-calc) #calculate residual
+            ###
+
+            self._fitData.append(calc) #store the fitted data
+            self._spectralComponents = V
+            self._figure = plt.figure(figsize = [12,10])
+            I = np.linalg.pinv(self._spectralComponents)@DTT #Extract spectral dynamics from experimental DTT
+            self._fitData.append(I)  # Add spectral dynamics
+            self._fitData.append(C)     #Add calculated dynamics from fit
+            residual = DTT-calc
+
+            #Plotting results
+            ## To add, use plotting decorators to introduce handles
+            ax1 = self._figure.add_subplot(331)
+            ax1.contourf(wl,t,DTT.T)
+            ax1.set_title('$\Delta T/T$')
+            ax1.set_yscale('log')
+            ax1.set_ylabel('Time (s)')
+            ax1.set_xlabel('Wavelength (nm)')
+
+            ax2 = self._figure.add_subplot(332)
+            ax2.plot(wl,P) # plot spectral significant components
+            ax2.set_title('Spectral Significant Components P\n ($P = U * \sqrt{S}$)')
+            ax2.set_ylabel('A.U.')
+            ax2.set_xlabel('Wavelength (nm)')
+
+            ax3 = self._figure.add_subplot(333)
+            ax3.plot(T) #plot time series significant componentd
+            ax3.set_title('Timeseries of Significant Components T\n ($T = \sqrt{S}*V\'$)')
+            ax3.set_xlabel('Time (s)')
+            ax3.set_ylabel('A.U.')
+
+            ax4 = self._figure.add_subplot(334)
+            ax4.contourf(wl,t,calc.T)
+            ax4.set_title('$Fit Result$')
+            ax4.set_yscale('log')
+            ax4.set_ylabel('Time (s)')
+            ax4.set_xlabel('Wavelength (nm)')
+
+            ax5 = self._figure.add_subplot(335)
+            ax5.plot(wl,self._spectralComponents)
+            ax5.set_title('$Spectra$')
+            ax5.set_ylabel('$\Delta T/T$')
+            ax5.set_xlabel('Wavelength (nm)')
+
+            ax6 = self._figure.add_subplot(336)
+            ax6.semilogx(t,C,'-r',label = 'Fit')
+            ax6.semilogx(t,I.T,'o', label = 'experimental')
+            ax6.set_title('$Population Dynamics$')
+            ax6.set_ylabel('Time (s)')
+            ax6.set_xlabel('Wavelength (nm)')
+            ax6.legend()
+
+            ax7 = self._figure.add_subplot(337)
+            ax7.contourf(wl,t,residual.T)
+            ax7.set_title('Residual$')
+            #ax7.set_yscale('log')
+            ax7.set_ylabel('Time (s)')
+            ax7.set_xlabel('Wavelength (nm)')
+
+            self._figure.tight_layout()
 
     # def reset_def_vals(self):
     #     '''
@@ -336,3 +461,14 @@ class Trs(Exp):
     #     None.
     #     '''
     #     return
+    def checkFitParams(self): ### Should be moved to fitting.py but I didn't get it to work with self referencing... VG 2020-06-24
+        if self._fitParams is None:
+            self._fitParams = []
+            self._fitData = []
+        else:
+            a=input('Rewrite old fits [y/n]?')
+            if a=='y':
+                self._fitParams = []
+                self._fitData = []
+            else:
+                print('I will append fit parametres to existing field')

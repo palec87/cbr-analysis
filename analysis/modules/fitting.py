@@ -9,7 +9,8 @@ similar, but not exactly the same things.
 import numpy as np
 import scipy.optimize as optim
 import matplotlib.pyplot as plt
-from ..helpers import support as sup
+from scipy.integrate import solve_ivp
+from analysis.helpers import support as sup
 
 
 # ------------------------------------------------------ #
@@ -171,8 +172,8 @@ def group_par(params, bool_gl, n, size):
     amp_count = idx_count[::2]
     tau_count = idx_count[1::2]
     amp, tau = [], []
-    par = list(params.copy())
     for i in range(n):
+        par = list(params.copy())
         # amplitudes
         if amp_count[i] == size:
             amp.extend(par[:size])
@@ -194,16 +195,58 @@ def group_par(params, bool_gl, n, size):
         t = [tau[size*k + i] for k in range(n)]
         par_total.append((a, t))
     return par_total
+
+
 # ------------------------------------------------------ #
 # ---- fitting few kinetics, ODE approach -------------- #
 # ------------------------------------------------------ #
+def fit_ode(x_data, y_data,
+            model, p0_amp, p0_ode, const=None,
+            **kwargs):
+    init = init_guess(x_data[0], model, p0_ode)
+    return init
 
+
+def init_guess(x, model, par_ode):
+    amps = (1,)
+    lims = (0, 500)
+    model_out = solve_ivp(model_dict[model], lims, amps,
+                          args=par_ode,
+                          t_eval=x[1:])
+    return model_out
+
+
+def rhs00(t, states, t0):
+    '''single state decay'''
+    s0 = states
+    return -s0/t0
+
+
+def rhs01(t, states, t0, t1):
+    ''' Two states, no transfer'''
+    s0, s1 = states
+    return [-s0/t0,
+            -s1/t1]
+
+
+def rhs02(t, states, t0, t1, t2):
+    ''' Two states, transfer from 1 ->2'''
+    s0, s1 = states
+    return [-s0/t0 - s0/t1,
+            -s1/t2 + s0/t1]
+
+
+model_dict = {
+              'one_state': rhs00,
+              'two_states': rhs01,
+              'two_states_transfer': rhs02
+            }
 
 if __name__ == "__main__":
-    x = np.linspace(0, 99, 100)
-    par = (1, 5, 1, 50, -1, 200, 1)
-    data2fit = exp_model(par, x, n=3)
-    data2fit += np.random.normal(0, 0.07, len(x))
+    # x = np.linspace(0, 99, 100)
+    # par = (1, 5, 1, 50, -1, 200, 1)
+    # data2fit = exp_model(par, x, n=3)
+    # data2fit += np.random.normal(0, 0.07, len(x))
 
     # fit = fit_kinetics(x, data2fit, n_exp=2)
 
@@ -218,7 +261,7 @@ if __name__ == "__main__":
     par = [1, 5, 1, 50, -1, 200, 0.1]
     par2 = par[:2] + [0.1]
     par3 = par[:4] + [0.1]
-    print(par, par2, par3)
+
     x = [np.linspace(0, 99, 100),
          np.linspace(0, 49, 100),
          np.linspace(0, 199, 200)]
@@ -226,36 +269,44 @@ if __name__ == "__main__":
                 exp_model(par2, x[1], n=1),
                 exp_model(par3, x[2], n=2)]
 
-    glob = [1, 1, 1, 1, 0]
-    fit = fit_kinetics_global(x, data2fit, gl_par=glob, n_exp=2, const=0.01)
-    fit_result = exp_model_gl(fit.x, bool_gl=glob, x=x, n=2)
-    print(fit.x)
-    for i in range(len(x)):
-        # for glob = [1,0]
-        # single_fit = exp_model([fit.x[0], fit.x[i+1]], x[i], 1)
+    # glob = [1, 1, 1, 1, 0]
+    # fit = fit_kinetics_global(x, data2fit, gl_par=glob, n_exp=2, const=0.01)
+    # fit_result = exp_model_gl(fit.x, bool_gl=glob, x=x, n=2)
+    # print(fit.x)
+    # for i in range(len(x)):
+    #     # for glob = [1,0]
+    #     # single_fit = exp_model([fit.x[0], fit.x[i+1]], x[i], 1)
 
-        # for glob = [1,0,1,0]
-        # single_fit = exp_model([fit.x[0], fit.x[i+1],
-        #                         fit.x[4], fit.x[4+i+1]], x[i], 2)
+    #     # for glob = [1,0,1,0]
+    #     # single_fit = exp_model([fit.x[0], fit.x[i+1],
+    #     #                         fit.x[4], fit.x[4+i+1]], x[i], 2)
 
-        # for glob = [0,1,0,1]
-        # single_fit = exp_model([fit.x[i], fit.x[3],
-        #                         fit.x[4+i], fit.x[-1]], x[i], 2)
+    #     # for glob = [0,1,0,1]
+    #     # single_fit = exp_model([fit.x[i], fit.x[3],
+    #     #                         fit.x[4+i], fit.x[-1]], x[i], 2)
 
-        # for glob = [1,1,1,1]
-        # single_fit = exp_model([fit.x[0], fit.x[1],
-        #                         fit.x[2], fit.x[3]], x[i], 2)
+    #     # for glob = [1,1,1,1]
+    #     # single_fit = exp_model([fit.x[0], fit.x[1],
+    #     #                         fit.x[2], fit.x[3]], x[i], 2)
 
-        # for glob = [1,1,1,1,1]
-        # single_fit = exp_model([fit.x[0], fit.x[1],
-        #                         fit.x[2], fit.x[3], fit.x[-1]], x[i], 2)
+    #     # for glob = [1,1,1,1,1]
+    #     # single_fit = exp_model([fit.x[0], fit.x[1],
+    #     #                         fit.x[2], fit.x[3], fit.x[-1]], x[i], 2)
 
-        # for glob = [1,1,1,1,0]
-        single_fit = exp_model([fit.x[0], fit.x[1],
-                                fit.x[2], fit.x[3], fit.x[-len(x)+i]], x[i], 2)
+    #     # for glob = [1,1,1,1,0]
+    #     single_fit = exp_model([fit.x[0], fit.x[1],
+    #                             fit.x[2], fit.x[3],
+    #                             fit.x[-len(x)+i]], x[i], 2)
 
-        plt.plot(x[i], data2fit[i], 'o', label=i)
-        plt.plot(x[i], fit_result[i], 'k-')
-        plt.plot(x[i], single_fit, 'k:')
-    plt.legend()
+    #     plt.plot(x[i], data2fit[i], 'o', label=i)
+    #     plt.plot(x[i], fit_result[i], 'k-')
+    # plt.legend()
+    # plt.show()
+
+    fit = fit_ode(x, data2fit,
+                  'one_state',
+                  p0_amp=(1,), p0_ode=(100,),
+                  const=None)
+    plt.plot(x[0], data2fit[0], 'o')
+    plt.plot(x[0][1:], fit.y[0], 'k-')
     plt.show()

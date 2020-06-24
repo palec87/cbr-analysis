@@ -289,7 +289,6 @@ class Trs(Exp):
             self.calc_kin(rng)
         data = self.kin
         t, data = ft.x_limits(self.t, data, t_lims)
-
         # for non-global fits (Dunno if it should be splitted into two methods)
         fit = []
         plt.figure()
@@ -301,7 +300,6 @@ class Trs(Exp):
                                         nexp), 'k-')
         plt.xscale('log')
         plt.show()
-
         # for GLOBAL fit of some params.
         if gl_par is not None:
             fit_glob = ft.fit_kinetics_global(t, data, gl_par, nexp)
@@ -318,6 +316,10 @@ class Trs(Exp):
             return fit, fit_glob
         else:
             return fit
+
+    def fit_ode(self, model, rng=None, t_lims=None, **kwargs):
+        return
+
 
     # def reset_def_vals(self):
     #     '''

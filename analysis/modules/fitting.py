@@ -30,19 +30,23 @@ def fit_kinetics(x_data, y_data,
     bounds -- two tuple array
     '''
     bounds = kwargs.get('bounds', (-np.inf, np.inf))
-    if init_par is None:
-        p0 = []
-        for i in range(n_exp):
-            p0.extend([3*(np.random.random()-0.5),
-                      100*np.random.random()])
-    else:
-        p0 = init_par
+    fit = []
+    for j in range(len(x_data)):
+        if init_par is None:
+            p0 = []
+            for i in range(n_exp):
+                p0.extend([3*(np.random.random()-0.5),
+                          100*np.random.random()])
+        else:
+            p0 = init_par
 
-    if const is not None:
-        p0.append(const)
-    fit = optim.least_squares(res_kin, p0,
-                              args=(y_data, x_data, n_exp),
-                              bounds=bounds)
+        if const is not None:
+            p0.append(const)
+        fit.append(optim.least_squares(res_kin, p0,
+                                       args=(y_data[j],
+                                             x_data[j],
+                                             n_exp),
+                                       bounds=bounds))
     return fit
 
 
@@ -144,7 +148,7 @@ def res_kin_gl(p, *args):
 # ------------------------------------------------------ #
 # ------------- helper functions ----------------------- #
 # ------------------------------------------------------ #
-def x_limits(x_data: tuple, y_data: tuple, t_lims: tuple):
+def cut_limits(x_data: tuple, y_data: tuple, t_lims: tuple):
     n_dat = len(y_data)
     # no limits, take all positive
     if t_lims is None:

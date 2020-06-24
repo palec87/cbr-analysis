@@ -286,45 +286,40 @@ class Trs(Exp):
         self.figure = fig_spe
         return fig_spe
 
-    def fit_single_kin(self, nexp=1, rng=None, t_lims=None, **kwargs):
-        gl_par = kwargs.get('glob', None)
+    def _check_rng_kin(self, rng):
         if rng is None:
             if self.kin is None:
-                print('You have to specify range')
-                return
+                rng = input('You need to specify range(s) as list:')
         else:
             self.calc_kin(rng)
-        data = self.kin
-        t, data = ft.x_limits(self.t, data, t_lims)
-        # for non-global fits (Dunno if it should be splitted into two methods)
-        fit = []
-        plt.figure()
-        for i in range(len(data)):
-            fit.append(ft.fit_kinetics(t[i], data[i], nexp,
-                                       const=0))
-            plt.plot(t[i], data[i], 'o')
-            plt.plot(t[i], ft.exp_model(fit[-1].x, t[i],
-                                        nexp), 'k-')
-        plt.xscale('log')
-        plt.show()
-        # for GLOBAL fit of some params.
+        return self.kin
+
+    def fit_single_kin(self, nexp=1, rng=None, t_lims=None, **kwargs):
+        gl_par = kwargs.get('glob', None)
+        const = kwargs.get('const', None)
+        data = self._check_rng_kin(rng)  # calc kin if do not exist
+        t, data = ft.cut_limits(self.t, data, t_lims)  # cut data to t_lims
         if gl_par is not None:
-            fit_glob = ft.fit_kinetics_global(t, data, gl_par, nexp)
-            fit_result = ft.exp_model_gl(fit_glob.x,
+            fit = ft.fit_kinetics_global(t, data, gl_par, nexp)
+            fit_result = ft.exp_model_gl(fit.x,
                                          bool_gl=gl_par,
                                          x=t,
                                          n=nexp)
-            for i in range(len(t)):
-                plt.plot(t[i], data[i], 'o', label=i)
-                plt.plot(t[i], fit_result[i], 'k-')
-            plt.xscale('log')
-            plt.legend()
-            plt.show()
-            return fit, fit_glob
         else:
-            return fit
+            fit = ft.fit_kinetics(t, data, nexp, const=const)
+            fit_result = [ft.exp_model(fit[i].x, t[i], nexp)
+                          for i in range(len(data))]
+        plt.figure()
+        for i in range(len(data)):
+            plt.plot(t[i], data[i], 'o', label=i)
+            plt.plot(t[i], fit_result[i], 'k-')
+        plt.xscale('log')
+        plt.legend()
+        plt.show()
+        return fit
 
     def fit_ode(self, model, rng=None, t_lims=None, **kwargs):
+        ft.fit_ode()
         return
 
     def SVD(self, plot = 'y'):

@@ -8,8 +8,10 @@ similar, but not exactly the same things.
 
 import numpy as np
 import scipy.optimize as optim
+from scipy.integrate import solve_ivp, odeint
 import matplotlib.pyplot as plt
 from ..helpers import support as sup
+
 
 
 # ------------------------------------------------------ #
@@ -259,3 +261,22 @@ if __name__ == "__main__":
         plt.plot(x[i], single_fit, 'k:')
     plt.legend()
     plt.show()
+
+# ------------------------------------------------------ #
+# ---------- fitting for SVD script -------------------- #
+# ------------------------------------------------------ #
+
+def rotation(var,k,pos,T,P,DTT,C0,t,function):
+    global C, R, V, calc, res
+    k[pos] = var
+    C = odeint(function,C0,t,args=(k,))
+    R = T.T @ np.linalg.pinv(C.T)
+    V = P @ R;
+    calc = V @ C.T
+    res = (DTT-calc)
+    if any(x<0 for x in k):
+        penalty = 1e6
+    else:
+        penalty = 0
+    error=np.linalg.norm(DTT-calc,'fro')+penalty;
+    return error

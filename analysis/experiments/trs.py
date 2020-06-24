@@ -145,7 +145,7 @@ class Trs(Exp):
             raise ValueError('Value has to be numeric, not a string.')
 
     def calc_spe(self, rng: list):
-        ''' 
+        '''
         calculates time-averaged spectra, with timepoints defined as:
         rng = [t1min, t1max, t2min, t2max, ... txmin, txmax]
         output is stored in obj.spe
@@ -278,7 +278,7 @@ class Trs(Exp):
             plt.plot(self.wl, line, label=i)
         self.figure = fig_spe
         return fig_spe
-    
+
     def fit_single_kin(self, nexp=1, rng=None, t_lims=None, **kwargs):
         gl_par = kwargs.get('glob', None)
         if rng is None:
@@ -290,20 +290,25 @@ class Trs(Exp):
         data = self.kin
         t, data = ft.x_limits(self.t, data, t_lims)
 
+        # for non-global fits (Dunno if it should be splitted into two methods)
         fit = []
         plt.figure()
         for i in range(len(data)):
-            fit.append(ft.fit_kinetics(t[i],
-                                       data[i], nexp, const=0,
-                                       ))
+            fit.append(ft.fit_kinetics(t[i], data[i], nexp,
+                                       const=0))
             plt.plot(t[i], data[i], 'o')
-            plt.plot(t[i], ft.exp_model(fit[-1].x, t[i], nexp), 'k-')
+            plt.plot(t[i], ft.exp_model(fit[-1].x, t[i],
+                                        nexp), 'k-')
         plt.xscale('log')
         plt.show()
 
+        # for GLOBAL fit of some params.
         if gl_par is not None:
             fit_glob = ft.fit_kinetics_global(t, data, gl_par, nexp)
-            fit_result = ft.exp_model_gl(fit_glob.x, bool_gl=gl_par, x=t, n=nexp)
+            fit_result = ft.exp_model_gl(fit_glob.x,
+                                         bool_gl=gl_par,
+                                         x=t,
+                                         n=nexp)
             for i in range(len(t)):
                 plt.plot(t[i], data[i], 'o', label=i)
                 plt.plot(t[i], fit_result[i], 'k-')

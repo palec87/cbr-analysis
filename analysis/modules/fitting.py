@@ -103,37 +103,6 @@ def fit_kinetics_global(x_data, y_data, gl_par,
     return fit
 
 
-def group_par(params, bool_gl, n, size):
-    idx_count = [size if item == 0 else item
-                 for item in bool_gl]
-    amp_count = idx_count[::2]
-    tau_count = idx_count[1::2]
-    amp, tau = [], []
-    par = list(params.copy())
-    for i in range(n):
-        # amplitudes
-        if amp_count[i] == size:
-            amp.extend(par[:size])
-            par = par[size:]
-        else:
-            amp.extend([par[0]]*size)
-            par = par[1:]
-        # lifetimes
-        if tau_count[i] == size:
-            tau.extend(par[:size])
-            par = par[size:]
-        else:
-            tau.extend([par[0]]*size)
-            par = par[1:]
-
-    par_total = []
-    for i in range(size):
-        a = [amp[size*k + i] for k in range(n)]
-        t = [tau[size*k + i] for k in range(n)]
-        par_total.append((a, t))
-    return par_total
-
-
 def exp_model_gl(params, bool_gl, x, n):
     func_total = []
     ndat = len(x)
@@ -194,6 +163,37 @@ def x_limits(x_data: tuple, y_data: tuple, t_lims: tuple):
         print('Wrong shape of t_lims.')
         return
     return x, data
+
+
+def group_par(params, bool_gl, n, size):
+    idx_count = [size if item == 0 else item
+                 for item in bool_gl]
+    amp_count = idx_count[::2]
+    tau_count = idx_count[1::2]
+    amp, tau = [], []
+    par = list(params.copy())
+    for i in range(n):
+        # amplitudes
+        if amp_count[i] == size:
+            amp.extend(par[:size])
+            par = par[size:]
+        else:
+            amp.extend([par[0]]*size)
+            par = par[1:]
+        # lifetimes
+        if tau_count[i] == size:
+            tau.extend(par[:size])
+            par = par[size:]
+        else:
+            tau.extend([par[0]]*size)
+            par = par[1:]
+
+    par_total = []
+    for i in range(size):
+        a = [amp[size*k + i] for k in range(n)]
+        t = [tau[size*k + i] for k in range(n)]
+        par_total.append((a, t))
+    return par_total
 # ------------------------------------------------------ #
 # ---- fitting few kinetics, ODE approach -------------- #
 # ------------------------------------------------------ #

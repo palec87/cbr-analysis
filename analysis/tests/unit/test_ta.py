@@ -1,7 +1,6 @@
 import pathlib as p
 import numpy as np
-# import cbr_analysis_v0.analysis.data as data
-# from ...data import data
+
 from analysis import data
 from analysis.experiments.ta import Ta
 

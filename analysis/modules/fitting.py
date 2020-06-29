@@ -8,11 +8,11 @@ similar, but not exactly the same things.
 
 import numpy as np
 import scipy.optimize as optim
+from inspect import signature
 from scipy.integrate import solve_ivp, odeint
 import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
 from analysis.helpers import support as sup
-
+from time import perf_counter
 
 
 # ------------------------------------------------------ #
@@ -209,17 +209,155 @@ def group_par(params, bool_gl, n, size):
 def fit_ode(x_data, y_data,
             model, p0_amp, p0_ode, const=None,
             **kwargs):
-    init = init_guess(x_data[0], model, p0_ode)
-    return init
+    tol = kwargs.get('tol', 1e-3)
+    fit_total = []
+    for i in range(len(x_data)):
+        j = 0
+        n_par = len(p0_ode+p0_amp)
+        par_before = np.array(p0_ode + p0_amp)
+        rel_change = np.array([1] * n_par)
+        par_ode_in, par_amp_in = p0_ode, p0_amp
+        lims = (x_data[i][0], x_data[i][-1])
+        while any(i > tol for i in rel_change) and j < 50:
+            # kinetic
+            kin = solve_ivp(model_dict[model][0],
+                            lims, par_amp_in,
+                            args=par_ode_in,
+                            t_eval=x_data[i]).y
+            #  fit amplitude(s)
+            if len(kin) == 1:
+                par_amp_out, _ = optim.curve_fit(func, kin[0],
+                                                 y_data[i])
+            else:
+                A = np.vstack(tuple(kin[:]))
+                par_amp_out = optim.lsq_linear(A.T, y_data[i]).x
+            # fit ODE(s)
+            par_amp_out = tuple(par_amp_out*par_amp_in)
+            t0 = perf_counter()
+            fit = optim.least_squares(res_ode, par_ode_in,
+                                      args=(y_data[i], model,
+                                            lims, par_amp_out,
+                                            x_data[i]),
+                                      bounds=(0, 1e8),
+                                      max_nfev=4)
+            t1 = perf_counter()
+            par_after = np.array(tuple(fit.x) + tuple(par_amp_out))
+            rel_change = abs((par_before-par_after)/par_before)
+            par_before = par_after
+            par_ode_in = tuple(fit.x)
+            par_amp_in = par_amp_out
+            j += 1
+            # print(f'ODE took: {t1-t0} secs.')
+            if t1-t0 > 5:
+                print('takes too long, try again.')
+                break
+            # print(f'params after fit: {par_after}')
+            # print(rel_change, rel_change.any() > tol)
+        fit_total.append((par_ode_in, par_amp_in))
+    return fit_total
 
 
-def init_guess(x, model, par_ode):
-    amps = (1,)
-    lims = (0, 500)
-    model_out = solve_ivp(model_dict[model], lims, amps,
-                          args=par_ode,
-                          t_eval=x[1:])
-    return model_out
+def get_params_ode(model, par):
+    sig = signature(model_dict[model][0])
+    n_ode_params = len(sig.parameters)-2
+    n_amp_params = model_dict[model][1]
+    if par is None:
+        par_out = (tuple([10000*np.random.random()
+                          for i in range(n_ode_params)]),
+                   tuple([2*np.random.random()-1
+                          for i in range(n_amp_params)])
+                   )
+    else:
+        # lengths are correct
+        if (len(par[0]) == n_ode_params and
+            len(par[1]) == n_amp_params):
+            par_out = par
+        else:
+            print('Wrong number of input params: generate random ones for you')
+            par_out = (tuple([10000*np.random.random()
+                              for i in range(n_ode_params)]),
+                       tuple([2*np.random.random()-1
+                              for i in range(n_amp_params)])
+                       )
+    return par_out
+
+
+def res_ode(p, *args):
+    y, model, lims, par_amp, x_range = args
+    model_ode = solve_ivp(model_dict[model][0],
+                          lims, par_amp,
+                          args=p,
+                          t_eval=x_range).y
+    all_comp_sum = np.sum(model_ode, axis=0)
+    res = (y - all_comp_sum)**2
+    return res
+
+
+# ------------------------------------ #
+# -------ODE 2D approach ------------- #
+# ------------------------------------ #
+def fit_ode_2d(x_data, y_data,
+               model, p0_amp, p0_ode, const=None,
+               **kwargs):
+    # tol = kwargs.get('tol', 1e-3)
+    par_ode_in, par_amp_in = p0_ode, p0_amp
+    lims = (x_data[0], x_data[-1])
+    j = 0
+    while j < 10:
+        # kinetic
+        kin = solve_ivp(model_dict[model][0],
+                        lims, par_amp_in,
+                        args=par_ode_in,
+                        t_eval=x_data).y
+        # fit amplitudes
+        if len(kin) == 1:
+            par_amp_out = []
+            for i in range(y_data.shape[1]):
+                _par, _ = optim.curve_fit(func, kin[0],
+                                          y_data[:, i])
+                par_amp_out.append(_par)
+        else:
+            par_amp_out = np.zeros((y_data.shape[1],
+                                   model_dict[model][1]))
+            for i in range(y_data.shape[1]):
+                A = np.vstack(tuple(kin[:]))
+                par_amp_out[i, :] = optim.lsq_linear(A.T,
+                                                     y_data[:, i]).x
+        # fit ODE(s)
+        fit = optim.least_squares(res_ode_2d, par_ode_in,
+                                  args=(y_data, model,
+                                        lims, par_amp_out,
+                                        x_data),
+                                  bounds=(0, 1e8),
+                                  max_nfev=4)
+        j+=1
+        print(j)
+    return fit.x, par_amp_out
+
+
+def res_ode_2d(p, *args):
+    y, model, lims, par_amp, x_range = args
+    model_ode = solve_ivp(model_dict[model][0],
+                          lims, tuple([1] * model_dict[model][1]),
+                          args=p,
+                          t_eval=x_range).y
+    data_sol = np.zeros(y.shape)
+    for i in range(model_dict[model][1]):
+        data_sol += np.outer(model_ode[i], par_amp[:,i])
+    res = np.sum((y - data_sol)**2, axis=1)
+    return res
+
+
+def func(kin, m):
+    return m*kin
+
+
+def ode_solution(p, *args):
+    model, lims, par_amp, x_range = args
+    sol = solve_ivp(model_dict[model][0], lims, par_amp,
+                    args=p,
+                    t_eval=x_range)
+    return sol
 
 
 def rhs00(t, states, t0):
@@ -242,10 +380,13 @@ def rhs02(t, states, t0, t1, t2):
             -s1/t2 + s0/t1]
 
 
+
+
+# first is function, second is number of states
 model_dict = {
-              'one_state': rhs00,
-              'two_states': rhs01,
-              'two_states_transfer': rhs02
+              'one_state': (rhs00, 1),
+              'two_states': (rhs01, 2),
+              'two_states_transfer': (rhs02, 2)
             }
 
 if __name__ == "__main__":
@@ -317,21 +458,21 @@ if __name__ == "__main__":
     plt.plot(x[0][1:], fit.y[0], 'k-')
     plt.show()
 
+
 # ------------------------------------------------------ #
 # ---------- fitting for SVD script -------------------- #
 # ------------------------------------------------------ #
-
-def rotation(var,k,pos,T,P,DTT,C0,t,function):
+def rotation(var, k, pos, T, P, DTT, C0, t, function):
     global C, R, V, calc, res
     k[pos] = var
-    C = odeint(function,C0,t,args=(k,))
+    C = odeint(function, C0, t, args=(k,))
     R = T.T @ np.linalg.pinv(C.T)
-    V = P @ R;
+    V = P @ R
     calc = V @ C.T
     res = (DTT-calc)
-    if any(x<0 for x in k):
+    if any(x < 0 for x in k):
         penalty = 1e6
     else:
         penalty = 0
-    error=np.linalg.norm(DTT-calc,'fro')+penalty;
+    error = np.linalg.norm(DTT-calc, 'fro') + penalty
     return error

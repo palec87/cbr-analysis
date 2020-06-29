@@ -49,10 +49,8 @@ class Trs(Exp):
         self.n_sweeps = None
         # Fitting parameters
         self._fitParams = None
-        self._fitData = None #store the fitted data
+        self._fitData = None  # store the fitted data
         
-
-
     @property
     def t(self):
         '''
@@ -286,6 +284,15 @@ class Trs(Exp):
         self.figure = fig_spe
         return fig_spe
 
+    @plot.log_xscale
+    def plot_fit(self, x, y, fit, **kwargs):
+        fig_fit = plt.figure()
+        for i in range(len(x)):
+            plt.plot(x[i], y[i])
+        self.figure = fig_fit
+        return fig_fit
+
+
     def _check_rng_kin(self, rng):
         if rng is None:
             if self.kin is None:
@@ -309,6 +316,7 @@ class Trs(Exp):
             fit = ft.fit_kinetics(t, data, nexp, const=const)
             fit_result = [ft.exp_model(fit[i].x, t[i], nexp)
                           for i in range(len(data))]
+
         plt.figure()
         for i in range(len(data)):
             plt.plot(t[i], data[i], 'o', label=i)
@@ -318,12 +326,29 @@ class Trs(Exp):
         plt.show()
         return fit
 
-    def fit_ode(self, model, rng=None, t_lims=None, **kwargs):
-        ft.fit_ode()
-        return
+    def fit_ode(self, model, rng=None, t_lims=None, par=None, **kwargs):
+        data = self._check_rng_kin(rng)  # calc kin if do not exist
+        t, data = ft.cut_limits(self.t, data, t_lims)  # cut data to t_lims
+        par_in = ft.get_params_ode(model, par)
+        print(par_in)
+        fit = ft.fit_ode(t, data, model, p0_amp=par_in[1], p0_ode=par_in[0], **kwargs)
+        print(fit)
+        plt.figure()
+        for i in range(len(t)):
+            fit_result = np.sum(ft.ode_solution(fit[i][0], model, (0, 1e6),
+                                         fit[i][1], t[i]).y, axis=0)
+            plt.plot(t[i], data[i], 'o')
+            plt.plot(t[i], fit_result, 'k-')
+            print(f'res {i} is {np.sum((data[i]-fit_result)**2)}')
+        plt.xscale('log')
+        plt.show()
+
+        self.plot_fit(t, data, fit, **kwargs)
+        return fit
 
     def SVD(self, plot = 'y'):
-        '''Function to perform single value decomposition on TA data, possible to plot spectral significant components, time series and sigma/s values
+        '''Function to perform single value decomposition on TA data, 
+        possible to plot spectral significant components, time series and sigma/s values
         author VG last editied 1/06/2020'''
         t = self._t[self._t>0] #predifine T larger than 0 for fitting
         DTT = self.data.T[:,self._t>0]  # scale DTT data accordingly

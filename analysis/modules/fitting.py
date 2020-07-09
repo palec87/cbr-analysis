@@ -38,10 +38,13 @@ def fit_kinetics(x_data, y_data,
                 p0.extend([3*(np.random.random()-0.5),
                           100*np.random.random()])
         else:
-            p0 = init_par
+            p0 = list(init_par)
 
         if const is not None:
-            p0.append(const)
+            if isinstance(const, (list, tuple)):
+                p0.append(const[j])
+            else:
+                p0.append(const)
         fit.append(optim.least_squares(res_kin, p0,
                                        args=(y_data[j],
                                              x_data[j],
@@ -55,7 +58,7 @@ def exp_model(par, x, n):
     tau = par[1::2]
     func = np.sum([amp[k]*np.exp(-x/tau[k])
                   for k in range(n)],
-                  axis=0)
+                  axis=0, dtype=np.float64)
     try:  # adding constant to fit
         func = func + np.ones(len(x))*amp[n]
     except IndexError:
@@ -83,26 +86,45 @@ def fit_kinetics_global(x_data, y_data, gl_par,
     bounds = kwargs.get('bounds', (-np.inf, np.inf))
     ndat = len(x_data)
     if init_par is None:
+        print('Using provided init_par')
         p0 = []
         for i in range(n_exp):
-            if gl_par[2*i] == 1:
+            if gl_par[2*i] == 1:  # global parameter
                 p0.extend([3 * (np.random.random()-0.5)])
-            else:
+            else:  # not global
                 p0.extend([3 * (np.random.random()-0.5)
                            for k in range(ndat)])
-            if gl_par[2*i+1] == 1:
+            if gl_par[2*i+1] == 1:  # global
                 p0.extend([100 * np.random.random()])
-            else:
+            else:  # not global
                 p0.extend([100 * np.random.random()
                            for k in range(ndat)])
     else:
-        p0 = init_par
+        p0 = list(init_par)
 
     if const is not None:
         if gl_par[2*n_exp] == 0:
-            p0.extend([const] * ndat)
+            if isinstance(const, (tuple, list)) and len(const) == ndat:
+                p0.extend(list(const))
+            elif isinstance(const, (tuple, list)) and len(const) == 1:
+                p0.extend(list(const) * ndat)
+            elif isinstance(const, (float, int)):
+                p0.extend([const] * ndat)
+            else:
+                raise AttributeError('Wrong length of const')
         else:
-            p0.extend([const])
+            if isinstance(const, (float, int)):
+                p0.append(const)
+            elif isinstance(const, (tuple, list)) and len(const) == 1:
+                p0.extend(list(const))
+            else:
+                raise AttributeError('Wrong length of const')
+    # checking correct length of params
+    if len(p0) != int(len(gl_par) + (len(gl_par)-sum(gl_par))*(ndat-1)):
+        print(len(p0), int(len(gl_par) + (len(gl_par)-sum(gl_par))*(ndat-1)))
+        raise AttributeError('Wrong length of init_par')
+        return
+
     # NL fitting
     fit = optim.least_squares(res_kin_gl, p0,
                               args=(y_data, gl_par, x_data, n_exp),
@@ -149,23 +171,47 @@ def res_kin_gl(p, *args):
 # ------------- helper functions ----------------------- #
 # ------------------------------------------------------ #
 def cut_limits(x_data: tuple, y_data: tuple, t_lims: tuple):
+    if any(isinstance(i, (list, tuple, np.ndarray))
+           for i in x_data):
+        pass   # nested x, do nothing
+    else:  # nest x
+        x_data = (x_data,)
+
+    if any(isinstance(i, (list, tuple, np.ndarray))
+           for i in y_data):
+        pass   # nested y, do nothing
+    else:  # nest y
+        y_data = (y_data,)
+
+    # extending x axis to match number of datalets.
     n_dat = len(y_data)
-    # no limits, take all positive
+    if n_dat == len(x_data):
+        pass
+    elif len(x_data) == 1:
+        x_data = tuple([x_data]*n_dat)
+    else:
+        raise IndexError('Either provide single x_axis OR for each y_trace.')
+
+    print(n_dat)
+    # no limits, take all positive x
+    x = []
+    data = []
     if t_lims is None:
-        x = [x_data[x_data > 0] for trace in y_data]
-        data = [trace[x_data > 0] for trace in y_data]
+        for i in range(n_dat):
+            x.append(x_data[i][x_data[i] > 0])
+            data.append(y_data[i][x_data[i] > 0])
     # x limits global for all kinetics
     elif len(t_lims) == 2:
-        beg, end = sup.get_idx(*t_lims, axis=x_data)
-        x = [x_data[beg:end+1]] * n_dat
-        data = [trace[beg:end+1] for trace in y_data]
+        for i in range(n_dat):
+            beg, end = sup.get_idx(*t_lims, axis=x_data[i])
+            x.append(x_data[i][beg:end+1])
+            data.append(y_data[i][beg:end+1])
     # x limits for each kinetic specified
     elif len(t_lims) == n_dat*2:
-        x = []
         for i in range(n_dat):
-            beg, end = sup.get_idx(*t_lims[2*i:2*i+2], axis=x_data)
-            x.append(x_data[beg:end+1])
-            data[i] = data[i][beg:end+1]
+            beg, end = sup.get_idx(*t_lims[2*i:2*i+2], axis=x_data[i])
+            x.append(x_data[i][beg:end+1])
+            data.append(y_data[i][beg:end+1])
     else:
         print('Wrong shape of t_lims.')
         return
@@ -209,7 +255,7 @@ def group_par(params, bool_gl, n, size):
 def fit_ode(x_data, y_data,
             model, p0_amp, p0_ode, const=None,
             **kwargs):
-    tol = kwargs.get('tol', 1e-3)
+    tol = kwargs.get('tol', 1e-2)
     fit_total = []
     for i in range(len(x_data)):
         j = 0
@@ -270,7 +316,7 @@ def get_params_ode(model, par):
     else:
         # lengths are correct
         if (len(par[0]) == n_ode_params and
-            len(par[1]) == n_amp_params):
+           len(par[1]) == n_amp_params):
             par_out = par
         else:
             print('Wrong number of input params: generate random ones for you')
@@ -330,7 +376,7 @@ def fit_ode_2d(x_data, y_data,
                                         x_data),
                                   bounds=(0, 1e8),
                                   max_nfev=4)
-        j+=1
+        j += 1
         print(j)
     return fit.x, par_amp_out
 
@@ -343,7 +389,7 @@ def res_ode_2d(p, *args):
                           t_eval=x_range).y
     data_sol = np.zeros(y.shape)
     for i in range(model_dict[model][1]):
-        data_sol += np.outer(model_ode[i], par_amp[:,i])
+        data_sol += np.outer(model_ode[i], par_amp[:, i])
     res = np.sum((y - data_sol)**2, axis=1)
     return res
 
@@ -378,8 +424,6 @@ def rhs02(t, states, t0, t1, t2):
     s0, s1 = states
     return [-s0/t0 - s0/t1,
             -s1/t2 + s0/t1]
-
-
 
 
 # first is function, second is number of states

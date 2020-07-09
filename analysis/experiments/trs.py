@@ -453,14 +453,12 @@ class Trs(Exp):
         possible to plot spectral significant components,
         time series and sigma/s values
         author VG last editied 1/06/2020'''
-        # t = self._t[self._t > 0]  # predifine T larger than 0 for fitting
         DTT = self.data.T[:, self._t > 0]  # scale DTT data accordingly
         wl = self.wl
 
         U, S, VT = np.linalg.svd(DTT, full_matrices=False)  # SVD
         P = U * S**0.5  # Spectral signif. components
         T = S**0.5 * VT.T  # Series signif. components
-
 
         if plot == 'y' or plot == 'yes':
             self._figure = plt.figure(figsize=[12, 4.5])
@@ -470,11 +468,11 @@ class Trs(Exp):
 
             ax2 = self._figure.add_subplot(132)
             ax2.plot(wl, P)  # plot spectral significant components
-            ax2.set_title('Spectral Significant Components P\n ($P = U * \sqrt{S}$)')
+            ax2.set_title('Spectral Significant Components P\n ($P = U*\sqrt{S}$)')
 
             ax3 = self._figure.add_subplot(133)
             ax3.plot(T)  # plot time series significant componentd
-            ax3.set_title('Timeseries of Significant Components T\n ($T = \sqrt{S}*V\'$)')
+            ax3.set_title('Timeseries of Significant Components T\n ($T=\sqrt{S}*V\'$)')
 
     def SVDfit(self, components=2, function=None, k0=[], pos=[], C0=[]):
         '''Fiting procedure using SVD extracted singificant components,
@@ -489,7 +487,7 @@ class Trs(Exp):
         # 0 for fitting
         DTT = self.data.T[:, self._t > 0]  # scale DTT data accordingly
         wl = self.wl
-        self.checkFitParams()
+        ft.check_fit_params(self)
 
         U, S, VT = np.linalg.svd(DTT, full_matrices=False)  # SVD
         P = U * S**0.5  # Spectral signif. components
@@ -585,26 +583,3 @@ class Trs(Exp):
     #     sets all values to initial default state after loading.
     #     '''
     #     return
-
-    # def exp_fit(self, kin, tlim):
-    #     '''
-    #     Fitting of kinetics
-
-    #     Returns
-    #     -------
-    #     None.
-    #     '''
-    #     return
-    def checkFitParams(self):
-        # Should be moved to fitting.py but I didn't get it
-        # to work with self referencing... VG 2020-06-24
-        if self._fitParams is None:
-            self._fitParams = []
-            self._fitData = []
-        else:
-            a = input('Rewrite old fits [y/n]?')
-            if a == 'y':
-                self._fitParams = []
-                self._fitData = []
-            else:
-                print('I will append fit parametres to existing field')

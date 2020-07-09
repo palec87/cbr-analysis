@@ -168,88 +168,6 @@ def res_kin_gl(p, *args):
 
 
 # ------------------------------------------------------ #
-# ------------- helper functions ----------------------- #
-# ------------------------------------------------------ #
-def cut_limits(x_data: tuple, y_data: tuple, t_lims: tuple):
-    if any(isinstance(i, (list, tuple, np.ndarray))
-           for i in x_data):
-        pass   # nested x, do nothing
-    else:  # nest x
-        x_data = (x_data,)
-
-    if any(isinstance(i, (list, tuple, np.ndarray))
-           for i in y_data):
-        pass   # nested y, do nothing
-    else:  # nest y
-        y_data = (y_data,)
-
-    # extending x axis to match number of datalets.
-    n_dat = len(y_data)
-    if n_dat == len(x_data):
-        pass
-    elif len(x_data) == 1:
-        x_data = tuple([x_data]*n_dat)
-    else:
-        raise IndexError('Either provide single x_axis OR for each y_trace.')
-
-    print(n_dat)
-    # no limits, take all positive x
-    x = []
-    data = []
-    if t_lims is None:
-        for i in range(n_dat):
-            x.append(x_data[i][x_data[i] > 0])
-            data.append(y_data[i][x_data[i] > 0])
-    # x limits global for all kinetics
-    elif len(t_lims) == 2:
-        for i in range(n_dat):
-            beg, end = sup.get_idx(*t_lims, axis=x_data[i])
-            x.append(x_data[i][beg:end+1])
-            data.append(y_data[i][beg:end+1])
-    # x limits for each kinetic specified
-    elif len(t_lims) == n_dat*2:
-        for i in range(n_dat):
-            beg, end = sup.get_idx(*t_lims[2*i:2*i+2], axis=x_data[i])
-            x.append(x_data[i][beg:end+1])
-            data.append(y_data[i][beg:end+1])
-    else:
-        print('Wrong shape of t_lims.')
-        return
-    return x, data
-
-
-def group_par(params, bool_gl, n, size):
-    idx_count = [size if item == 0 else item
-                 for item in bool_gl]
-    amp_count = idx_count[::2]
-    tau_count = idx_count[1::2]
-    amp, tau = [], []
-    for i in range(n):
-        par = list(params.copy())
-        # amplitudes
-        if amp_count[i] == size:
-            amp.extend(par[:size])
-            par = par[size:]
-        else:
-            amp.extend([par[0]]*size)
-            par = par[1:]
-        # lifetimes
-        if tau_count[i] == size:
-            tau.extend(par[:size])
-            par = par[size:]
-        else:
-            tau.extend([par[0]]*size)
-            par = par[1:]
-
-    par_total = []
-    for i in range(size):
-        a = [amp[size*k + i] for k in range(n)]
-        t = [tau[size*k + i] for k in range(n)]
-        par_total.append((a, t))
-    return par_total
-
-
-# ------------------------------------------------------ #
 # ---- fitting few kinetics, ODE approach -------------- #
 # ------------------------------------------------------ #
 def fit_ode(x_data, y_data,
@@ -301,31 +219,6 @@ def fit_ode(x_data, y_data,
             # print(rel_change, rel_change.any() > tol)
         fit_total.append((par_ode_in, par_amp_in))
     return fit_total
-
-
-def get_params_ode(model, par):
-    sig = signature(model_dict[model][0])
-    n_ode_params = len(sig.parameters)-2
-    n_amp_params = model_dict[model][1]
-    if par is None:
-        par_out = (tuple([10000*np.random.random()
-                          for i in range(n_ode_params)]),
-                   tuple([2*np.random.random()-1
-                          for i in range(n_amp_params)])
-                   )
-    else:
-        # lengths are correct
-        if (len(par[0]) == n_ode_params and
-           len(par[1]) == n_amp_params):
-            par_out = par
-        else:
-            print('Wrong number of input params: generate random ones for you')
-            par_out = (tuple([10000*np.random.random()
-                              for i in range(n_ode_params)]),
-                       tuple([2*np.random.random()-1
-                              for i in range(n_amp_params)])
-                       )
-    return par_out
 
 
 def res_ode(p, *args):
@@ -426,6 +319,150 @@ def rhs02(t, states, t0, t1, t2):
             -s1/t2 + s0/t1]
 
 
+# ------------------------------------------------------ #
+# ---------- fitting for SVD script -------------------- #
+# ------------------------------------------------------ #
+def rotation(var, k, pos, T, P, DTT, C0, t, function):
+    global C, R, V, calc, res
+    k[pos] = var
+    C = odeint(function, C0, t, args=(k,))
+    R = T.T @ np.linalg.pinv(C.T)
+    V = P @ R
+    calc = V @ C.T
+    res = (DTT-calc)
+    if any(x < 0 for x in k):
+        penalty = 1e6
+    else:
+        penalty = 0
+    error = np.linalg.norm(DTT-calc, 'fro') + penalty
+    return error
+
+
+# ------------------------------------------------------ #
+# ------------- helper functions ----------------------- #
+# ------------------------------------------------------ #
+def cut_limits(x_data: tuple, y_data: tuple, t_lims: tuple):
+    if any(isinstance(i, (list, tuple, np.ndarray))
+           for i in x_data):
+        pass   # nested x, do nothing
+    else:  # nest x
+        x_data = (x_data,)
+
+    if any(isinstance(i, (list, tuple, np.ndarray))
+           for i in y_data):
+        pass   # nested y, do nothing
+    else:  # nest y
+        y_data = (y_data,)
+
+    # extending x axis to match number of datalets.
+    n_dat = len(y_data)
+    if n_dat == len(x_data):
+        pass
+    elif len(x_data) == 1:
+        x_data = tuple([x_data]*n_dat)
+    else:
+        raise IndexError('Either provide single x_axis OR for each y_trace.')
+
+    print(n_dat)
+    # no limits, take all positive x
+    x = []
+    data = []
+    if t_lims is None:
+        for i in range(n_dat):
+            x.append(x_data[i][x_data[i] > 0])
+            data.append(y_data[i][x_data[i] > 0])
+    # x limits global for all kinetics
+    elif len(t_lims) == 2:
+        for i in range(n_dat):
+            beg, end = sup.get_idx(*t_lims, axis=x_data[i])
+            x.append(x_data[i][beg:end+1])
+            data.append(y_data[i][beg:end+1])
+    # x limits for each kinetic specified
+    elif len(t_lims) == n_dat*2:
+        for i in range(n_dat):
+            beg, end = sup.get_idx(*t_lims[2*i:2*i+2], axis=x_data[i])
+            x.append(x_data[i][beg:end+1])
+            data.append(y_data[i][beg:end+1])
+    else:
+        print('Wrong shape of t_lims.')
+        return
+    return x, data
+
+
+def group_par(params, bool_gl, n, size):
+    idx_count = [size if item == 0 else item
+                 for item in bool_gl]
+    amp_count = idx_count[::2]
+    tau_count = idx_count[1::2]
+    amp, tau = [], []
+    for i in range(n):
+        par = list(params.copy())
+        # amplitudes
+        if amp_count[i] == size:
+            amp.extend(par[:size])
+            par = par[size:]
+        else:
+            amp.extend([par[0]]*size)
+            par = par[1:]
+        # lifetimes
+        if tau_count[i] == size:
+            tau.extend(par[:size])
+            par = par[size:]
+        else:
+            tau.extend([par[0]]*size)
+            par = par[1:]
+
+    par_total = []
+    for i in range(size):
+        a = [amp[size*k + i] for k in range(n)]
+        t = [tau[size*k + i] for k in range(n)]
+        par_total.append((a, t))
+    return par_total
+
+
+def get_params_ode(model, par):
+    sig = signature(model_dict[model][0])
+    n_ode_params = len(sig.parameters)-2
+    n_amp_params = model_dict[model][1]
+    if par is None:
+        par_out = (tuple([10000*np.random.random()
+                          for i in range(n_ode_params)]),
+                   tuple([2*np.random.random()-1
+                          for i in range(n_amp_params)])
+                   )
+    else:
+        # lengths are correct
+        if (len(par[0]) == n_ode_params and
+           len(par[1]) == n_amp_params):
+            par_out = par
+        else:
+            print('Wrong number of input params: generate random ones for you')
+            par_out = (tuple([10000*np.random.random()
+                              for i in range(n_ode_params)]),
+                       tuple([2*np.random.random()-1
+                              for i in range(n_amp_params)])
+                       )
+    return par_out
+
+
+def check_fit_params(obj):
+    """Check if fit parameters exist and should be rewritten
+
+    Args:
+        obj (class Trs): time-resolved experiment
+    """
+    if obj._fitParams is None:
+        obj._fitParams = []
+        obj._fitData = []
+    else:
+        a = input('Rewrite old fits [y/n]?')
+        if a == 'y':
+            obj._fitParams = []
+            obj._fitData = []
+        else:
+            print('I will append fit parametres to existing field')
+
+
 # first is function, second is number of states
 model_dict = {
               'one_state': (rhs00, 1),
@@ -501,22 +538,3 @@ if __name__ == "__main__":
     plt.plot(x[0], data2fit[0], 'o')
     plt.plot(x[0][1:], fit.y[0], 'k-')
     plt.show()
-
-
-# ------------------------------------------------------ #
-# ---------- fitting for SVD script -------------------- #
-# ------------------------------------------------------ #
-def rotation(var, k, pos, T, P, DTT, C0, t, function):
-    global C, R, V, calc, res
-    k[pos] = var
-    C = odeint(function, C0, t, args=(k,))
-    R = T.T @ np.linalg.pinv(C.T)
-    V = P @ R
-    calc = V @ C.T
-    res = (DTT-calc)
-    if any(x < 0 for x in k):
-        penalty = 1e6
-    else:
-        penalty = 0
-    error = np.linalg.norm(DTT-calc, 'fro') + penalty
-    return error

@@ -8,11 +8,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import scipy.optimize as optim
+from scipy.interpolate import interp1d
 from scipy.integrate import odeint
 from ..helpers import support as sup
 from ..helpers.support import refresh_vals
 from ..modules import plotting as plot
 from .. modules import fitting as ft
+
 
 from .exp import Exp
 
@@ -120,6 +122,77 @@ class Trs(Exp):
             self.data[:, i_min:i_max] = 0
         else:
             raise ValueError('Value has to be numeric, not a string.')
+    
+    def calc_chirp(self, method='auto', split=1000, **kwargs):
+        to_save = kwargs.get('save', False)  # save chirp?
+        t_slice = slice(*sup.get_idx(*[-5, 5], axis=self._t))  # region around t0
+        # identify max of TA
+        # mx_signal = np.max(abs(self.data[t_slice, :]).ravel())
+        # wl_bin = np.zeros(len(self.wl))
+        # idx, wl_new = [], []
+        # for i in range(len(self.wl)):
+        #     if np.max(abs(self.data[t_slice, i])) > mx_signal/10:
+        #         wl_bin[i] = 1
+        #         wl_new.append(self.wl[i])
+        #         der = np.gradient(self.data[t_slice, i])
+        #         idx.append(np.argmax(abs(der)))
+        #     else:
+        #         pass
+        # f = interp1d(wl_new, idx, kind='cubic')
+        # chirp = f(self.wl)
+        # plt.plot(wl_new, idx)
+        # # plt.plot(self.wl, chirp)
+        # plt.show()
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_title('click to select chirp')
+        line, = ax.plot([], [], 'ko', fillstyle='none')  # empty line
+        self.chirp = plot.LineBuilder(line)
+
+        ax.contour(self.wl, self._t, self.data, 31)
+        ax.set_ylim([-5, 5])
+        plt.show()
+
+    def correct_chirp(self, method='3rd', split=1000):
+        if method == '3rd':
+            z = np.polyfit(self.chirp.xs, self.chirp.ys, 3)
+            p = np.poly1d(z)
+            chirp2 = p(self.wl)
+        elif method == '2x3rd':
+            idx = int(self.getIdx(split, axis=self.wl))
+            rng1 = len([j for j in self.chirp.xs if j < split])
+            z1 = np.polyfit(self.chirp.xs[:rng1], self.chirp.ys[:rng1], 3)
+            z2 = np.polyfit(self.chirp.xs[rng1:], self.chirp.ys[rng1:], 3)
+            p1 = np.poly1d(z1)
+            p2 = np.poly1d(z2)
+            chirp2 = np.concatenate((p1(self.wl[:idx]),
+                                     p2(self.wl[idx:])))
+        d = np.zeros((len(chirp2), 2))
+        d[:, 0], d[:, 1] = self.wl, chirp2
+        self._chirp = d
+
+        cCor = np.zeros(self.data.shape)
+        for i in range(self.data.shape[1]):
+            # shift time trace
+            inter = interp1d((self._t - self._chirp[i, 1]), self.data[:, i],
+                             kind='linear', bounds_error=False, fill_value=(0, 0))
+            cCor[:, i] = inter(self._t - max(self._chirp[:, 1]))
+        fig = plt.figure()
+        plt.contour(self.wl, self._t, self.data, 41)
+        plt.plot(self.wl, self._chirp)
+        plt.plot(self.chirp.xs, self.chirp.ys, 'ko')
+        plt.ylim([-5, 5])
+        plt.show()
+
+
+        self.data = cCor
+        self._t = self._t - max(self._chirp[:, 1])
+
+        fig = plt.figure()
+        plt.contour(self.wl, self._t, self.data, 41)
+        plt.ylim([-5, 5])
+        plt.show()
+        return
 
     @refresh_vals
     def cut_wl(self, wlmin: float, wlmax: float):

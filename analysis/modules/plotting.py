@@ -5,7 +5,8 @@ Created on Tue Jun  9 11:51:20 2020
 @author: David Palecek
 """
 import functools
-from matplotlib import pyplot as plt
+import matplotlib.cm as cm
+import numpy as np
 
 
 class LineBuilder:
@@ -16,11 +17,12 @@ class LineBuilder:
         self.cid = line.figure.canvas.mpl_connect('button_press_event', self)
 
     def __call__(self, event):
-        if event.inaxes!=self.line.axes: return
+        if event.inaxes != self.line.axes:
+            return
         self.xs.append(event.xdata)
         self.ys.append(event.ydata)
         self.line.set_data(self.xs, self.ys)
-        self.line.figure.canvas.draw( color='k')
+        self.line.figure.canvas.draw()
 
 
 def log_xscale(graph):
@@ -99,6 +101,21 @@ def normalize_plot(graph):
     return wrapper_normalize
 
 
+def set_cmap(graph):
+    @functools.wraps(graph)
+    def wrapper_set_cmap(*args, **kwargs):
+        fig = graph(*args, **kwargs)
+        if 'cmap' in kwargs:
+            data = [line.get_data()
+                    for line in fig.axes[0].lines]
+            color = cm.get_cmap(kwargs['cmap'])(
+                        np.linspace(0, 1, len(data)))  # define cmap
+            for i in range(len(data)):
+                fig.axes[0].lines[i].set_color(color[i])
+        return fig
+    return wrapper_set_cmap
+
+
 def normalize_data(data: tuple, method: str) -> tuple:
     if method == 'max':
         data_norm = tuple((kin[0], kin[1] / max(kin[1]))
@@ -108,6 +125,9 @@ def normalize_data(data: tuple, method: str) -> tuple:
                           for kin in data)
     elif method == 'abs':
         data_norm = tuple((kin[0], kin[1] / max(abs(kin[1])))
+                          for kin in data)
+    elif method == 'area':
+        data_norm = tuple((kin[0], kin[1] / np.trapz(abs(kin[1])))
                           for kin in data)
     else:
         print('Unknown normalization method')

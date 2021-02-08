@@ -1,2 +1,0 @@
-Absorption, PLQE (%) 
-0.0723, 32.92

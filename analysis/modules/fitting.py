@@ -29,6 +29,7 @@ def fit_kinetics(x_data, y_data,
     Keyword arguments:
     bounds -- two tuple array
     '''
+    # print(x_data, y_data)
     bounds = kwargs.get('bounds', (-np.inf, np.inf))
     fit = []
     for j in range(len(x_data)):
@@ -56,6 +57,7 @@ def fit_kinetics(x_data, y_data,
 def exp_model(par, x, n):
     amp = par[::2]
     tau = par[1::2]
+    # print(x, tau)
     func = np.sum([amp[k]*np.exp(-x/tau[k])
                   for k in range(n)],
                   axis=0, dtype=np.float64)
@@ -68,7 +70,7 @@ def exp_model(par, x, n):
 
 def res_kin(p, *args):
     y, *params = args
-    return (y - exp_model(p, *params))**2
+    return np.sqrt((y - exp_model(p, *params))**2)
 
 
 # ------------------------------------------------------ #
@@ -86,7 +88,7 @@ def fit_kinetics_global(x_data, y_data, gl_par,
     bounds = kwargs.get('bounds', (-np.inf, np.inf))
     ndat = len(x_data)
     if init_par is None:
-        print('Using provided init_par')
+        print('Using default init_par')
         p0 = []
         for i in range(n_exp):
             if gl_par[2*i] == 1:  # global parameter
@@ -341,28 +343,31 @@ def rotation(var, k, pos, T, P, DTT, C0, t, function):
 # ------------------------------------------------------ #
 # ------------- helper functions ----------------------- #
 # ------------------------------------------------------ #
-def cut_limits(x_data: tuple, y_data: tuple, t_lims: tuple):
+def nest_data(data):
     if any(isinstance(i, (list, tuple, np.ndarray))
-           for i in x_data):
-        pass   # nested x, do nothing
-    else:  # nest x
-        x_data = (x_data,)
+           for i in data):
+        pass   # nested data, do nothing
+    else:  # nest data
+        data = (data,)
+    return data
 
-    if any(isinstance(i, (list, tuple, np.ndarray))
-           for i in y_data):
-        pass   # nested y, do nothing
-    else:  # nest y
-        y_data = (y_data,)
 
-    # extending x axis to match number of datalets.
-    n_dat = len(y_data)
-    if n_dat == len(x_data):
+def duplicate_nesting(x, y):
+    x = nest_data(x)
+    if len(x) == len(y):
         pass
-    elif len(x_data) == 1:
-        x_data = tuple([x_data]*n_dat)
-    else:
-        raise IndexError('Either provide single x_axis OR for each y_trace.')
+    elif len(x) > len(y):
+        raise ValueError('more x axes than datasets')
+    else:  # only case I need duplicate x axis
+        x = tuple([x[0]]*len(y))
+    return x
 
+
+def cut_limits(x_data: tuple, y_data: tuple, t_lims: tuple):
+    # # extending x axis to match number of datasets.
+    n_dat = len(y_data)
+    y_data = nest_data(y_data)
+    x_data = duplicate_nesting(x_data, y_data)
     print(n_dat)
     # no limits, take all positive x
     x = []
@@ -384,7 +389,7 @@ def cut_limits(x_data: tuple, y_data: tuple, t_lims: tuple):
             x.append(x_data[i][beg:end+1])
             data.append(y_data[i][beg:end+1])
     else:
-        print('Wrong shape of t_lims.')
+        raise ValueError('Wrong shape of t_lims.')
         return
     return x, data
 

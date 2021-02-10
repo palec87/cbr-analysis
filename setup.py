@@ -7,20 +7,20 @@ requires = [
     'numpy==1.18.5',
     'h5py',
     'pathlib',
-    'matplotlib',
+    'matplotlib==3.2',
     'pandas',
     'scipy',
 ]
 
 setuptools.setup(
     name="cbr-analysis",
-    version="0.1.0",
+    version="0.1.2",
     author="DP",
     author_email="david@stanka.de",
     description="OE analysis",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/palec87/cbr_analysis/archive/v0.1.0.tar.gz",
+    url="https://github.com/palec87/cbr-analysis/archive/v0.1.2.tar.gz",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+""""""
 """
 Created on Thu Jun  4 17:01:57 2020
 
@@ -67,9 +68,6 @@ class Ta(Trs):
     def load_data(self):
         '''
         Calls loading function based on file suffix.
-        Returns
-        -------
-        None.
         '''
         if self.path.suffix == '.hdf5':
             self.fastlab_import()
@@ -142,9 +140,8 @@ class Ta(Trs):
         pass
 
     def uberfast_import(self):
-        '''
-        Importing .wtf files from Uberfast fs and ps setups.
-        '''
+        """Importing .wtf files from Uberfast fs and ps setups.
+        """
         data = np.loadtxt(self.path)
         wl_last = -1
         if max(data[:, 1]) > 0.1:

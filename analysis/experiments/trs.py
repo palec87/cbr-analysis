@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+""""""
 """
 Created on Fri Jun  5 21:02:16 2020
 
@@ -23,7 +24,6 @@ __all__ = ['Trs']
 
 class Trs(Exp):
     """Time-resolved-spectroscopy class
-    TODO: Chirp correction
 
     Args:
         Exp (class): parent class
@@ -73,7 +73,6 @@ class Trs(Exp):
         """setting t0 by given value
         If more datasets loaded, It changes
         t0 for idx's dataset
-        author DP, last change 28/04/20
 
         Args:
             val (float): time zero
@@ -90,7 +89,6 @@ class Trs(Exp):
     def rem_bg(self, val: float):
         """remove background, where the background is calculated as the
             time-averaged spectra of all points before 'tPos'
-            author DP, last change 28/04/20
 
         Args:
             val (float): remove bgd from timepoint earlier than this
@@ -110,8 +108,7 @@ class Trs(Exp):
 
     def rem_region(self, wl_min: float, wl_max: float):
         """set data to 0 for spectral region of 2D data
-         - on the half-open interval [wl_min, wl_max)
-        author DP, last change 28/04/20
+        on the half-open interval [wl_min, wl_max)
 
         Args:
             wl_min (float): remove WL above
@@ -127,7 +124,11 @@ class Trs(Exp):
         else:
             raise ValueError('Value has to be numeric, not a string.')
 
-    def calc_chirp(self, method='3rd', split=1000):
+    def calc_chirp(self):
+        """Plot region of the 2D data around time zero to select point for the
+        chirp fitting. Points are inserted into 'line' list.
+        TODO: Write unit test
+        """
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.set_title('click to select chirp')
@@ -139,6 +140,18 @@ class Trs(Exp):
         fig.show()
 
     def fit_chirp(self, method='3rd', split=1000):
+        """Fitting polynomial into the chirp points selected by 'calc_chirp'.
+
+        Args:
+            method (str, optional): fitting method, either 3rd or 2x3rd.
+                Either 3rd polynomial or 2 3rd polynomials with breaking
+                point at 'split' wavelength. Defaults to '3rd'.
+            split (float, optional): for 2x3rd method defines where
+                the WL interval splits for polynomial fitting.
+                Defaults to 1000.
+
+        TODO: Write unit test
+        """
         if method == '3rd':
             z = np.polyfit(self._chirp.xs, self._chirp.ys, 3)
             p = np.poly1d(z)
@@ -163,17 +176,47 @@ class Trs(Exp):
         plt.show()
 
     def load_chirp(self, name='chirp.txt', path=None):
+        """Loads chirp, if path is nonstandard, it can be selected by 'path'
+        and file 'name' arguments.
+
+        Args:
+            name (str, optional): name of the file containing the chirp.
+                Defaults to 'chirp.txt'.
+            path (str, optional): Relative path from the current 'save_path'.
+                Defaults to None.
+
+        TODO: Write unit test
+        """
         load_path = self._check_path_argument(name, path)
         self.chirp = np.loadtxt(load_path)
         print(f'chirp loaded to {load_path}')
 
     def save_chirp(self, name='chirp.txt', path=None):
+        """Saves current chirp, path and filename can be selected via 'path'
+        and 'name' parameters.
+
+        Args:
+            name (str, optional): Filename. Defaults to 'chirp.txt'.
+            path (str, optional): Relative path to current 'savepath'.
+                Defaults to None.
+
+        TODO: Write unit test
+        """
         print(path)
         save_path = self._check_path_argument(name, path)
         np.savetxt(save_path, self.chirp)
         print(f'chirp save to {save_path}')
 
     def correct_chirp(self, **kwargs):
+        """Once the chirp is fitted or loaded, this function corrects it by
+        shifting the t axis of the data. It also plots the resulting
+        corrected data region around t0.
+
+        Returns:
+            matplotlib.figure: Figure of the corrected data
+
+        TODO: Write unit test
+        """
         cCor = np.zeros(self.data.shape)
         for i in range(self.data.shape[1]):
             # shift time trace
@@ -193,9 +236,8 @@ class Trs(Exp):
 
     @refresh_vals
     def cut_wl(self, wlmin: float, wlmax: float):
-        """select wl range between wlMin and wlMax
-        - returns closed interval [wlmin, wlmax]
-        author DP, last change 28/04/20
+        """select wl range between wlMin and wlMax.
+        Returns closed interval [wlmin, wlmax]
 
         Args:
             wlmin (float): remove wavelength below
@@ -211,7 +253,7 @@ class Trs(Exp):
             try:
                 self.sweeps = [self.sweeps[i][:, imn:imx+1]
                                for i in range(self.n_sweeps)]
-            except AttributeError:
+            except TypeError:
                 print('No sweeps')
             self.wlmax_id = imx + 1
             self.wlmin_id = imn
@@ -221,7 +263,6 @@ class Trs(Exp):
     @refresh_vals
     def cut_t(self, tmin: float, tmax: float):
         """removes timepoints between 'tMin' and 'tMax'
-        author DP, last change 28/04/20
 
         Args:
             tmin (float): remove all times before
@@ -237,7 +278,7 @@ class Trs(Exp):
             try:
                 self.sweeps = [self.sweeps[i][imn:imx+1, :]
                                for i in range(self.n_sweeps)]
-            except AttributeError:
+            except TypeError:
                 print('No sweeps')
             self.tmax_id = imx + 1
             self.tmin_id = imn
@@ -248,8 +289,8 @@ class Trs(Exp):
         """calculates time-averaged spectra, with timepoints defined as:
         rng = [t1min, t1max, t2min, t2max, ... txmin, txmax]
         output is stored in obj.spe
-        - wl range on closed interval [tmin, tmax]
-        author DP, last change 28/04/20
+
+        WL range on closed interval [tmin, tmax]
 
         Args:
             rng (list): min/max time point for each spectrum
@@ -267,11 +308,11 @@ class Trs(Exp):
 
     def calc_kin(self, rng):
         """calculates time-averaged spectra, with timepoints defined as:
-        rng = [wl1 min, wl1 max, ... wlx min, wlx max]
-        the output is stored in self.kin, using the time axis
-        self.t
-        - mean returned on closed interval [wlmin, wlmax]
-        author DP, last change 28/04/20
+        rng = [wl1 min, wl1 max, ... wlx min, wlx max]. The output
+        is stored in self.kin, using the time axis t.
+
+        Mean returned on closed interval [wlmin, wlmax]
+
         TODO: recalculation should delete fitParams I think
 
         Args:
@@ -292,7 +333,6 @@ class Trs(Exp):
     def new_average(self, include):
         """include sweeps from binary list:
         include = [0,1,1,0...0,1]
-        author DP, last change 28/04/20
 
         Args:
             include (list of booleans): 1 for sweeps to be included
@@ -329,11 +369,10 @@ class Trs(Exp):
     def comp_sweep_kin(self, rng: list, **kwargs):
         """compare kinetics from different sweeps within rng of WL
         rng = [wl1 min, wl1 max]
-        author DP, last change 28/04/20
 
         Args:
             rng (list): list of min/max wavelengths to calculate kin
-            for each sweep
+                for each sweep
         """
         if len(rng) > 2:
             print('Only first WL range used.')
@@ -372,7 +411,6 @@ class Trs(Exp):
     def invert_sweeps(self, invert):
         """invert sweeps from binary list
         invert = [0,1,1,0...0,1]
-        author DP, last change 09/06/20
         TODO: proble, this calls decorator twice because of self.new_average
 
         Args:
@@ -461,9 +499,9 @@ class Trs(Exp):
         TODO: plot actual fit, not only data.
 
         Args:
-            x_axis (list/tuple of arrays): time axes for kinetics
-            y_data (list/tuple of arrays): kinetic data
-            fit (list/tuple of arrays): fit array
+            x_axis (list/tuple of arrays): time axes for kinetics.
+            y_data (list/tuple of arrays): kinetic data.
+            fit (list/tuple of arrays): fit array.
 
         Returns:
             figure: saved in self.figure
@@ -480,7 +518,7 @@ class Trs(Exp):
         do not exist, user is asked to input them manually.
 
         Args:
-            rng (list): list of min/max ranges for each kinetic
+            rng (list): list of min/max ranges for each kinetic.
 
         Returns:
             lsit: calculated kinetics
@@ -503,9 +541,9 @@ class Trs(Exp):
         Args:
             nexp (int, optional): Number of exponentials. Defaults to 1.
             rng (list, optional): WL Ranges (min, max) for each kin.
-                Defaults to None.
+                    Defaults to None.
             t_lims (tuple/list, optional): Specify time-range for the fit.
-                Defaults to None.
+                    Defaults to None.
 
         Returns:
             obj: least_square object
@@ -539,11 +577,14 @@ class Trs(Exp):
         """Fit one or several kinetics to ODE solution.
 
         Args:
-            model (string): model from dictionary in fitting module
-            rng (list, optional): ranges to calculate kinetics.
+            model (string): Model from dictionary in fitting module.
+
+            rng (list, optional): Ranges to calculate kinetics.
                 Defaults to None.
-            t_lims (tuple, optional): x limits for the fit. Defaults to None.
-            par (tuple, optional): lifetimes and amplitudes of components.
+
+            t_lims (tuple, optional): X limits for the fit. Defaults to None.
+
+            par (tuple, optional): Lifetimes and amplitudes of components.
                 Defaults to None.
 
         Returns:
@@ -575,7 +616,7 @@ class Trs(Exp):
         '''Function to perform single value decomposition on TA data,
         possible to plot spectral significant components,
         time series and sigma/s values
-        author VG last editied 1/06/2020'''
+        '''
         DTT = self.data.T[:, self._t > 0]  # scale DTT data accordingly
         wl = self.wl
 
@@ -592,13 +633,13 @@ class Trs(Exp):
             ax2 = self._figure.add_subplot(132)
             ax2.plot(wl, P)  # plot spectral significant components
             ax2.set_title(
-                'Spectral Significant Components P\n ($P = U*\sqrt{S}$)'
+                r'Spectral Significant Components P\n ($P = U*\sqrt{S}$)'
                 )
 
             ax3 = self._figure.add_subplot(133)
             ax3.plot(T)  # plot time series significant componentd
             ax3.set_title(
-                'Timeseries of Significant Components T\n ($T=\sqrt{S}*V\'$)'
+                r'Timeseries of Significant Components T\n ($T=\sqrt{S}*V\'$)'
                 )
 
     def SVDfit(self, components=2, function=None, k0=[], pos=[], C0=[]):
@@ -660,7 +701,7 @@ class Trs(Exp):
             # To add, use plotting decorators to introduce handles
             ax1 = self._figure.add_subplot(331)
             ax1.contourf(wl, t, DTT.T)
-            ax1.set_title('$\Delta T/T$')
+            ax1.set_title(r'$\Delta T/T$')
             ax1.set_yscale('log')
             ax1.set_ylabel('Time (s)')
             ax1.set_xlabel('Wavelength (nm)')
@@ -668,7 +709,7 @@ class Trs(Exp):
             ax2 = self._figure.add_subplot(332)
             ax2.plot(wl, P)  # plot spectral significant components
             ax2.set_title(
-                'Spectral Significant Components P\n ($P = U * \sqrt{S}$)'
+                r'Spectral Significant Components P\n ($P = U * \sqrt{S}$)'
                 )
             ax2.set_ylabel('A.U.')
             ax2.set_xlabel('Wavelength (nm)')
@@ -676,35 +717,35 @@ class Trs(Exp):
             ax3 = self._figure.add_subplot(333)
             ax3.plot(T)  # plot time series significant componentd
             ax3.set_title(
-                'Timeseries of Significant Components T\n ($T = \sqrt{S}*V\'$)'
+                r'Timeseries of Significant Components T\n ($T = \sqrt{S}*V\'$)'
                 )
             ax3.set_xlabel('Time (s)')
             ax3.set_ylabel('A.U.')
 
             ax4 = self._figure.add_subplot(334)
             ax4.contourf(wl, t, calc.T)
-            ax4.set_title('$Fit Result$')
+            ax4.set_title(r'$Fit Result$')
             ax4.set_yscale('log')
             ax4.set_ylabel('Time (s)')
             ax4.set_xlabel('Wavelength (nm)')
 
             ax5 = self._figure.add_subplot(335)
             ax5.plot(wl, self._spectralComponents)
-            ax5.set_title('$Spectra$')
-            ax5.set_ylabel('$\Delta T/T$')
+            ax5.set_title(r'$Spectra$')
+            ax5.set_ylabel(r'$\Delta T/T$')
             ax5.set_xlabel('Wavelength (nm)')
 
             ax6 = self._figure.add_subplot(336)
             ax6.semilogx(t, C, '-r', label='Fit')
             ax6.semilogx(t, Inverse.T, 'o', label='experimental')
-            ax6.set_title('$Population Dynamics$')
+            ax6.set_title(r'$Population Dynamics$')
             ax6.set_ylabel('Time (s)')
             ax6.set_xlabel('Wavelength (nm)')
             ax6.legend()
 
             ax7 = self._figure.add_subplot(337)
             ax7.contourf(wl, t, residual.T)
-            ax7.set_title('Residual$')
+            ax7.set_title('Residuals')
             # ax7.set_yscale('log')
             ax7.set_ylabel('Time (s)')
             ax7.set_xlabel('Wavelength (nm)')
@@ -716,10 +757,3 @@ class Trs(Exp):
     #     sets all values to initial default state after loading.
     #     '''
     #     return
-
-
-if __name__ == '__main__':
-    folder = 'C:\\Users\David Palecek\\Documents\\Data\\UF_fs\\191218\\221337_\
-sol-f889_ma_540nm_10uW_MA_POL_Pump_H_POL_Probe\\sol-f889_\
-ma_540nm_10uW_MA_POL_Pump_H_POL_Probe.wtf'
-    data = Trs()

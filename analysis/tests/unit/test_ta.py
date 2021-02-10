@@ -8,11 +8,14 @@ from analysis.experiments.ta import Ta
 
 path_fastlab_data = p.PurePath(data.__file__
                                ).parent.joinpath(
+    'Fastlab_data',
     '1_PbS_TETCA_high_tol_200um_40uW_532nm.hdf5')
 path_uberfast_data = p.PurePath(data.__file__
                                 ).parent.joinpath(
     'UF_data',
     'sol-f889_ma_540nm_5uW_MA_POL_Pump_H_POL_Probe.wtf')
+
+print(path_uberfast_data)
 
 
 def test_fastlab_import():

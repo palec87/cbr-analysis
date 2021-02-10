@@ -192,8 +192,12 @@ class Plqe(Static):
         files = []
         print(f'center WL is {self.center_wl}')
         for val in self.center_wl:
-            files.append(str(self.setup)+'_'+str(self.detector)+'_c'+str(val)+'_wl')
-            files.append(str(self.setup)+'_'+str(self.detector)+'_c'+str(val))
+            files.append(
+                str(self.setup)+'_'+str(self.detector)+'_c'+str(val)+'_wl',
+                )
+            files.append(
+                str(self.setup)+'_'+str(self.detector)+'_c'+str(val),
+                )
 
         CalibrationAll = np.array(pd.read_csv(self.calib_file,
                                               delimiter=';',
@@ -202,8 +206,10 @@ class Plqe(Static):
 
         if len(CalibrationAll[0, :]) > 2:
             Cal1 = CalibrationAll[:, 2:4]
-            self.calibration = np.vstack(((Cal0[Cal0[:, 0] < self.combine_wl, :]),
-                                          (Cal1[Cal1[:, 0] >= self.combine_wl, :])))
+            self.calibration = np.vstack(
+                ((Cal0[Cal0[:, 0] < self.combine_wl, :]),
+                 (Cal1[Cal1[:, 0] >= self.combine_wl, :])),
+                 )
         else:  # otherwise assume only one file and store it
             self.calibration = Cal0
 
@@ -227,10 +233,10 @@ class Plqe(Static):
         #  Combine the LAS and PL measurements. Create an intermediate array
         #  (inter) with all 5 columns and later remove the PL columns
         inter = self.data_raw[self.wl_raw[:, 0] <
-                              self.combine_wl, :]  # pick LAS measurement until combineWL
+                              self.combine_wl, :]  # LAS part until combineWL
         inter2 = self.data_raw[self.wl_raw[:, 1] >=
-                               self.combine_wl, :]  # pick PL measurement after combineWL
-        interLAS = inter[:, (0, 1, 4)]  # remove columns with with PL experiments
+                               self.combine_wl, :]  # PL part after combineWL
+        interLAS = inter[:, (0, 1, 4)]  # remove columns with PL experiments
         interPL = inter2[:, (2, 3, 4)]  # remove columns with LAS experiments
 
         # combine WL arrays
@@ -257,7 +263,8 @@ class Plqe(Static):
         author VG last edited 01/05/20'''
         # single number for each spectrum (ON/OFF/NO)
         background = np.mean(self.data_raw[(self.wl_raw > bg_wl-10) &
-                                           (self.wl_raw < bg_wl+10), :], axis=0)
+                                           (self.wl_raw < bg_wl+10), :],
+                             axis=0)
         self.data = self.data_raw - background
         self.is_bg_sub = True
         print('Background Subtracted')

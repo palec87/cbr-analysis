@@ -109,11 +109,25 @@ def res_kin(p, *args):
 def fit_kinetics_global(x_data, y_data, gl_par,
                         n_exp=1, init_par=None, const=None,
                         **kwargs):
-    '''
-    fits one or few kinetics globally
-    to sum of exponentials
-    lifetimes are global params (Basically DAS)
-    '''
+    """Global fit of one or few kinetics
+
+    Args:
+        x_data (list/tuple): x axis
+        y_data (list/tuple): y data
+        gl_par (list): Bool of par which are global, typically lifetimes.
+        n_exp (int, optional): Number of exponentials. Defaults to 1.
+        init_par ([type], optional): Initial params for params.
+            Defaults to None.
+        const ([type], optional): Add constant term to fit.
+            Defaults to None.
+
+    Raises:
+        AttributeError: Wrong length of const
+        AttributeError: Wrong length of init_par
+
+    Returns:
+        obj: optimize.least_squares output
+    """
     # basic checks of inputs
     bounds = kwargs.get('bounds', (-np.inf, np.inf))
     ndat = len(x_data)
@@ -165,6 +179,18 @@ def fit_kinetics_global(x_data, y_data, gl_par,
 
 
 def exp_model_gl(params, bool_gl, x, n):
+    """Constructs sum of exponentials model taking into account if some
+    params are set to be global.
+
+    Args:
+        params (list/tuple): amplitudes and lifetime params
+        bool_gl (list/tuple): Bools, global params are 1
+        x (list/tuple): x axis
+        n (int): Number of exponentials
+
+    Returns:
+        ndarray: Total function given the params.
+    """
     func_total = []
     ndat = len(x)
     # order parameters to list of tuples
@@ -188,6 +214,14 @@ def exp_model_gl(params, bool_gl, x, n):
 
 
 def res_kin_gl(p, *args):
+    """Calculates residuals (chi2) for the global model of sum of exponentials.
+
+    Args:
+        p (list/tuple): params
+
+    Returns:
+        ndarray: vector of residuals.
+    """
     y, *params = args
     model = exp_model_gl(p, *params)
     y_flat = np.array([item
@@ -205,6 +239,24 @@ def res_kin_gl(p, *args):
 def fit_ode(x_data, y_data,
             model, p0_amp, p0_ode, const=None,
             **kwargs):
+    """Fitting ODEs to one or few kinetics. Amplitudes are fitted linearly,
+    lifetimes from ODE nonlinearly
+
+    Args:
+        x_data (list/tuple): x axis
+        y_data (list/tuple): y values
+        model (str): One of the models from model_dict
+            TODO: description and list of the models
+        p0_amp (tuple): initial components amplitudes
+        p0_ode (tuple):  lifetimes
+        const ([type], optional): Not implemented yet. Defaults to None.
+
+    Kwargs:
+        TODO: bounds to variables, not implemented
+
+    Returns:
+        list of tuples: (params from ODE, params from linear amp fits)
+    """
     tol = kwargs.get('tol', 1e-2)
     fit_total = []
     for i in range(len(x_data)):
@@ -254,6 +306,14 @@ def fit_ode(x_data, y_data,
 
 
 def res_ode(p, *args):
+    """Calculates chi2 residuals of the ODE fit and data
+
+    Args:
+        p (list/tuple): parameter of the fit
+
+    Returns:
+        ndarray: residuals
+    """
     y, model, lims, par_amp, x_range = args
     model_ode = solve_ivp(model_dict[model][0],
                           lims, par_amp,
@@ -270,6 +330,25 @@ def res_ode(p, *args):
 def fit_ode_2d(x_data, y_data,
                model, p0_amp, p0_ode, const=None,
                **kwargs):
+    """ODEs fitting of the whole 2D map
+
+    Args:
+        x_data (list/tuple): x axis, ie time
+        y_data (list/tuple): y data
+        model (str): model from dict
+        p0_amp (list/tuple): components amplitudes for linear fit
+        p0_ode (list/tuple): ODE params for nonlinear fit
+        const ([type], optional): should include const, not Implemented yet.
+            Defaults to None.
+
+    Kwargs:
+        TODO: bounds to variables, not implemented
+
+    Returns:
+        2-tuple: (Solution of the nonlinear fit optimize.least_squares.x,
+                  amplitude params from the linear fit,
+                  )
+    """
     # tol = kwargs.get('tol', 1e-3)
     par_ode_in, par_amp_in = p0_ode, p0_amp
     lims = (x_data[0], x_data[-1])
@@ -307,6 +386,14 @@ def fit_ode_2d(x_data, y_data,
 
 
 def res_ode_2d(p, *args):
+    """Calculates residuals for the ODE fit of the whole 2D maps
+
+    Args:
+        p (list/tuple): fit parameters
+
+    Returns:
+        ndarray: vector of residulas (chi2) integrated along WL
+    """
     y, model, lims, par_amp, x_range = args
     model_ode = solve_ivp(model_dict[model][0],
                           lims, tuple([1] * model_dict[model][1]),
@@ -319,11 +406,32 @@ def res_ode_2d(p, *args):
     return res
 
 
-def func(kin, m):
+def func(kin, m: float):
+    """multiple of the kinetic, used for linear part of the ODE fits
+
+    Args:
+        kin (array): kinetic
+        m (float): scaling factor of the kinetic
+
+    Returns:
+        array: multiple of kinetic
+    """
     return m*kin
 
 
 def ode_solution(p, *args):
+    """Integration of the ODE
+
+    Args:
+        p (list/tuple): ODE params to be fitted
+
+    *args:
+        tuple of parameters for the solve_ivp function,
+        including the ones from the linear fit.
+
+    Returns:
+        obj: solve_ivp object
+    """
     model, lims, par_amp, x_range = args
     sol = solve_ivp(model_dict[model][0], lims, par_amp,
                     args=p,
@@ -355,6 +463,22 @@ def rhs02(t, states, t0, t1, t2):
 # ---------- fitting for SVD script -------------------- #
 # ------------------------------------------------------ #
 def rotation(var, k, pos, T, P, DTT, C0, t, function):
+    """TODO: docs
+
+    Args:
+        var ([type]): [description]
+        k ([type]): [description]
+        pos ([type]): [description]
+        T ([type]): [description]
+        P ([type]): [description]
+        DTT ([type]): [description]
+        C0 ([type]): [description]
+        t ([type]): [description]
+        function ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     global C, R, V, calc, res
     k[pos] = var
     C = odeint(function, C0, t, args=(k,))
@@ -460,6 +584,18 @@ def cut_limits(x_data: tuple, y_data: tuple, x_lims: tuple):
 
 
 def group_par(params, bool_gl, n, size):
+    """Organize params based on number of exponentials and
+    wheter they are global or not
+
+    Args:
+        params (list/tuple): input params from the user
+        bool_gl (list/tuple): bools to signify global ones
+        n (int): number of exponentials
+        size ([type]): [description]
+
+    Returns:
+        list: new set of params.
+    """
     idx_count = [size if item == 0 else item
                  for item in bool_gl]
     amp_count = idx_count[::2]
@@ -491,6 +627,15 @@ def group_par(params, bool_gl, n, size):
 
 
 def get_params_ode(model, par):
+    """Generate parameters for ODEs fit based on the model
+
+    Args:
+        model (str): one of the models selected from dict
+        par (list/tuple): parameters
+
+    Returns:
+        tuple: parameters out
+    """
     sig = signature(model_dict[model][0])
     n_ode_params = len(sig.parameters)-2
     n_amp_params = model_dict[model][1]

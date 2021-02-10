@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-""""""
 """
-Created on Fri Jun  5 21:02:16 2020
-
-@author: David Palecek
+Time-resolved spectroscopy (TRS) class.
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -717,7 +714,8 @@ class Trs(Exp):
             ax3 = self._figure.add_subplot(333)
             ax3.plot(T)  # plot time series significant componentd
             ax3.set_title(
-                r'Timeseries of Significant Components T\n ($T = \sqrt{S}*V\'$)'
+                r'Timeseries of Significant \
+                Components T\n ($T = \sqrt{S}*V\'$)'
                 )
             ax3.set_xlabel('Time (s)')
             ax3.set_ylabel('A.U.')

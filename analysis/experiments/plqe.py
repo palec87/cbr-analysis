@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jun  5 16:20:57 2020
-
-@author: David Palecek
+PLQE spectral analysis data class, child of Static.
 """
 import os
 import re

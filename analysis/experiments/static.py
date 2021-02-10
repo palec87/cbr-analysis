@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jun 10 11:07:29 2020
-
-@author: David Palecek
+Static spectra data class, child of Exp
 """
 from .exp import Exp
 
 __all__ = ['Static']
+
 
 class Static(Exp):
     '''
@@ -17,4 +16,3 @@ class Static(Exp):
         self.info = f'Class instance of {self.__class__}'
         self.path = None
         print(self.info)
-    

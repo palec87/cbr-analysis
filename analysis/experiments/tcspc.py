@@ -10,5 +10,8 @@ __all__ = ['Tcspc']
 
 
 class Tcspc(Trs):
-    def mod_info():
-        print(f'mod info from {object.__name__}')
+    def __init__(self, dir_save):
+        super().__init__(dir_save)
+        self.info = f'Class instance of {self.__class__}'
+        self.path = None
+        print(self.info)

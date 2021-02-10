@@ -134,7 +134,9 @@ class Plqe(Static):
                 expos = 1
                 acc = 1
             else:
-                expos = float(str_to_parse.group().split('x')[1][:-1].replace('p', '.'))
+                expos = float(str_to_parse.group().split(
+                    'x',
+                    )[1][:-1].replace('p', '.'))
                 acc = int(str_to_parse.group().split('x')[0])
                 exposure.append(expos)
                 accum.append(acc)
@@ -159,8 +161,6 @@ class Plqe(Static):
         self.data = np.vstack(data).T
         self.data_raw = self.data.copy()
 
-
-
         if self.n_meas == 5:
             self.wl = np.vstack((wl[0],
                                  wl[2])).T
@@ -174,10 +174,13 @@ class Plqe(Static):
         '''Author VG last edited 14/5/20'''
         '''calibrates PLQE data with input calibration file(s)' '''
         if self.is_cal is True:
-            print('Calibration Already Performed, ignoring calibration request')
+            print(
+                'Calibration Already Performed, ignoring calibration request'
+                )
             return
         # calibration file path
         self.calib_file = p.PurePath(data.__file__).parent.joinpath(
+            'PLQE',
             'Combined_Calibration_Uni_1908_CPT_190707_Fluorimeter.csv')
         self.center_wl = kwargs.get('center_wl', self.center_wl)
 
@@ -216,7 +219,7 @@ class Plqe(Static):
         self.data = (self.data/CalibIp[:, None])  # Calibration
         self.is_cal = True
 
-    def combine_plqe(self,combineWL=None):
+    def combine_plqe(self, combineWL=None):
         if type(combineWL) != int:
             self.combine_wl = min(self.wl[:, 1])+50
         else:

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun  9 11:51:20 2020
-
-@author: David Palecek
+Plotting related classes and functions.
 """
 import functools
 import matplotlib.cm as cm

@@ -7,6 +7,7 @@ Created on Fri Jun  5 19:26:06 2020
 import pickle
 import os
 from ..helpers import support as sup
+import pathlib as p
 
 __all__ = ['Exp']
 
@@ -44,7 +45,7 @@ class Exp():
             self.reset_plqe()
             print('Data reset to raw data.')
         elif isinstance(self, Ta):
-            print(NotImplemented)
+            self.reset_ta()
         else:
             print(NotImplemented)
 
@@ -55,8 +56,14 @@ class Exp():
         TODO: add keyed hashing with 'hmac'
         '''
         dict_to_save = sup.dict_from_class(self)
-        with open(self.d_path.joinpath('project.pkl'), 'wb') as outfile:
+        with open(self.save_path.joinpath('project.pkl'), 'wb') as outfile:
             pickle.dump(dict_to_save, outfile)
+
+    def load_project(self, name='project.pkl', path=None):
+        load_path = self._check_path_argument(name, path)
+        proj = pickle.load(open(load_path, "rb"))
+        self.__dict__.update(proj)
+        print(f'project loaded from: {load_path}')
 
     def save_fig(self, **kwargs):
         '''Saves current figure in self._figure created during plotting.
@@ -74,3 +81,13 @@ class Exp():
         fname = sup.gen_timed_path(save_path, name, '.pkl')
         with open(fname, 'wb') as f:
             pickle.dump(self.figure, f)
+
+    def _check_path_argument(self, name, path):
+        if path is None:
+            try:
+                return self.save_path.joinpath(name)
+            except AttributeError:
+                print('No save_path, use "path" input')
+                raise
+        else:
+            return p.PurePath(path).joinpath(name)

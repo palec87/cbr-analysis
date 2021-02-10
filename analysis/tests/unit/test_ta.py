@@ -1,51 +1,57 @@
+"""Testing basic operations on TA datasets"""
 import pathlib as p
 import numpy as np
-# import cbr_analysis_v0.analysis.data as data
-# from ...data import data
+
 from analysis import data
 from analysis.experiments.ta import Ta
 
 
 path_fastlab_data = p.PurePath(data.__file__
                                ).parent.joinpath(
+    'Fastlab_data',
     '1_PbS_TETCA_high_tol_200um_40uW_532nm.hdf5')
 path_uberfast_data = p.PurePath(data.__file__
                                 ).parent.joinpath(
     'UF_data',
     'sol-f889_ma_540nm_5uW_MA_POL_Pump_H_POL_Probe.wtf')
 
+print(path_uberfast_data)
+
 
 def test_fastlab_import():
-    data = Ta(path_fastlab_data)
-    assert data.data.shape == (126, 1024)
-    assert len(data.probe) == 22
-    assert len(data.reference) == 22
-    assert len(data.sweeps) == 22
-    assert data.sweeps[0].shape == (126, 1024)
-    assert data.n_sweeps == 22
-    assert data.wl_unit == 'nm'
-    assert data.wl_high == 740
-    assert data.px_low == 258
-    assert data.t_unit == 'ns'
-    assert data.n_shots == 1000
-    assert data.inc_sweeps == [1]*22
+    """test for fastlab TA data import."""
+    dat = Ta(path_fastlab_data)
+    assert dat.data.shape == (126, 1024)
+    assert len(dat.probe) == 22
+    assert len(dat.reference) == 22
+    assert len(dat.sweeps) == 22
+    assert dat.sweeps[0].shape == (126, 1024)
+    assert dat.n_sweeps == 22
+    assert dat.wl_unit == 'nm'
+    assert dat.wl_high == 740
+    assert dat.px_low == 258
+    assert dat.t_unit == 'ns'
+    assert dat.n_shots == 1000
+    assert dat.inc_sweeps == [1]*22
 
 
 def test_uberfast_import():
-    data = Ta(path_uberfast_data)
-    assert data.data.shape == (178, 510)
-    assert data.t_unit == 'ps'
-    assert data.wl_unit == 'nm'
-    assert data._t.shape == (178,)
-    assert data.wl.shape == (510,)
-    assert data.inc_sweeps == [1]*20
-    assert data.n_sweeps == 20
-    assert len(data.sweeps) == 20
-    assert data.sweeps[0].shape == (178, 510)
-    assert data.kin is None
+    """test for uberfast TA data import"""
+    dat = Ta(path_uberfast_data)
+    assert dat.data.shape == (178, 510)
+    assert dat.t_unit == 'ps'
+    assert dat.wl_unit == 'nm'
+    assert dat._t.shape == (178,)
+    assert dat.wl.shape == (510,)
+    assert dat.inc_sweeps == [1]*20
+    assert dat.n_sweeps == 20
+    assert len(dat.sweeps) == 20
+    assert dat.sweeps[0].shape == (178, 510)
+    assert dat.kin is None
 
 
 def test_t0():
+    """setting time zero"""
     obj = Ta()
     obj._t = np.linspace(0, 10, 11)
     obj.t0 = 0
@@ -55,6 +61,7 @@ def test_t0():
 
 
 def test_t02():
+    """setting time zero in sequence"""
     obj = Ta()
     obj._t = np.linspace(-1, 9, 11)
     obj.t0 = 1
@@ -64,6 +71,7 @@ def test_t02():
 
 
 def test_rem_bg():
+    """remove background"""
     obj = Ta()
     obj.data = np.ones((10, 10)).reshape(10, 10)
     obj._t = np.linspace(0, 9, 10)
@@ -72,6 +80,7 @@ def test_rem_bg():
 
 
 def test_rem_region():
+    """remove spectral region"""
     obj = Ta()
     obj.data = np.ones((10, 10)).reshape(10, 10)
     obj.wl = np.linspace(0, 9, 10)
@@ -80,6 +89,7 @@ def test_rem_region():
 
 
 def test_cut_wl():
+    """cut wavelength axis outside of specified region"""
     obj = Ta()
     obj.data = np.ones((10, 10))
     obj.wl = np.linspace(0, 9, 10)
@@ -88,10 +98,12 @@ def test_cut_wl():
 
 
 def test_cut_wl_sweeps():
+    """cut wavelength axis outside of region for sweeps"""
     pass
 
 
 def test_cut_t():
+    """cut time axis outside of the specified region"""
     obj = Ta()
     obj.data = np.ones((10, 10))
     obj._t = np.linspace(0, 9, 10)
@@ -100,6 +112,7 @@ def test_cut_t():
 
 
 def test_calc_spe():
+    """ calculate spectra in ranges."""
     obj = Ta()
     obj.data = np.ones((5, 5))
     obj._t = np.linspace(0, 4, 5)
@@ -109,6 +122,7 @@ def test_calc_spe():
 
 
 def test_calc_kin():
+    """ calculate kinetics"""
     obj = Ta()
     obj.data = np.ones((5, 5))
     obj.wl = np.linspace(0, 4, 5)
@@ -118,6 +132,7 @@ def test_calc_kin():
 
 
 def test_recalc():
+    """recalculate data if data changed"""
     obj = Ta()
     obj.data = np.ones((5, 5))
     obj.wl = np.linspace(0, 4, 5)
@@ -131,6 +146,7 @@ def test_recalc():
 
 
 def test_new_average():
+    """Calculate new average of data from specified sweeps"""
     obj = Ta()
     obj.data = np.ones((5, 5))
     obj.sweeps = [np.ones((5, 5))*k
@@ -145,6 +161,7 @@ def test_new_average():
 
 
 def test_invert_sweeps():
+    """ invert selected sweeps"""
     obj = Ta()
     obj.sweeps = [np.ones((5, 5))*k
                   for k in range(3)]

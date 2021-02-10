@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+""""""
 """
 Created on Thu Jun  4 17:01:57 2020
 
@@ -38,12 +39,35 @@ class Ta(Trs):
             self.save_path = None
         print('correct version of analysis.')
 
+    def reset_ta(self):
+        if self.path is None:
+            raise RuntimeError('empty TA object, cannot reset values')
+        else:
+            print('resetting all the values')
+            self.kin = None
+            self.kin_rng = None
+            self.spe = None
+            self.spe_rng = None
+            self.tmax_id = None
+            self.tmin_id = None
+            self.wlmax_id = None
+            self.wlmin_id = None
+            self.t0 = 0
+
+            self.inc_sweeps = None
+            self.figure = None
+
+            self._fitParams = None
+            self._fitData = None  # store the fitted data
+
+            self.chirp = None
+            self._chirp = None
+
+            self.load_data()
+
     def load_data(self):
         '''
         Calls loading function based on file suffix.
-        Returns
-        -------
-        None.
         '''
         if self.path.suffix == '.hdf5':
             self.fastlab_import()
@@ -75,10 +99,13 @@ class Ta(Trs):
 
             if 'Long' in str(delay):
                 self.t_unit = 'ns'
+                self.t_conversion = 1e-9
             elif 'UltraShort' in str(delay):
                 self.t_unit = 'fs'
+                self.t_conversion = 1e-15
             elif 'Short' in str(delay):
                 self.t_unit = 'ps'
+                self.t_conversion = 1e-12
             else:
                 print('No delayType imported')
                 print(str(delay))
@@ -113,9 +140,8 @@ class Ta(Trs):
         pass
 
     def uberfast_import(self):
-        '''
-        Importing .wtf files from Uberfast fs and ps setups.
-        '''
+        """Importing .wtf files from Uberfast fs and ps setups.
+        """
         data = np.loadtxt(self.path)
         wl_last = -1
         if max(data[:, 1]) > 0.1:
@@ -131,6 +157,7 @@ class Ta(Trs):
         self._t = data[0, 1:]/1000
 
         self.t_unit = 'ps'
+        self.t_conversion = 1e-12
         self.wl_unit = 'nm'
 
         #  import sweeps

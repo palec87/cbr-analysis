@@ -64,7 +64,19 @@ def fit_kinetics(x_data, y_data,
     return fit
 
 
-def exp_model(par, x, n):
+def exp_model(par, x, n: int):
+    """Generates sum of exponentials model, if odd
+    number of par, then the last one (2*n+1) is taken as a additional
+    constant variable.
+
+    Args:
+        par (list/tuple): amp, tau... sequence
+        x (list/tuple): x axis
+        n (int): number of expoentials
+
+    Returns:
+        ndarray: y values of the resulting function
+    """
     amp = par[::2]
     tau = par[1::2]
     # print(x, tau)
@@ -79,6 +91,14 @@ def exp_model(par, x, n):
 
 
 def res_kin(p, *args):
+    """Residuals of the exponential model.
+
+    Args:
+        p (list/tuple): amp and taus of the model
+
+    Returns:
+        ndarray: RMS error
+    """
     y, *params = args
     return np.sqrt((y - exp_model(p, *params))**2)
 

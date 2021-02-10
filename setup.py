@@ -3,10 +3,19 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+requires = [
+    'numpy==1.18.5',
+    'h5py',
+    'pathlib',
+    'matplotlib',
+    'pandas',
+    'scipy',
+]
+
 setuptools.setup(
-    name="cbr_analysis",
+    name="cbr-analysis",
     version="0.1.0",
-    author="David",
+    author="DP",
     author_email="david@stanka.de",
     description="OE analysis",
     long_description=long_description,
@@ -19,4 +28,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.7',
+    install_requires=requires,
 )

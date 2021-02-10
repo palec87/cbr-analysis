@@ -630,13 +630,13 @@ class Trs(Exp):
             ax2 = self._figure.add_subplot(132)
             ax2.plot(wl, P)  # plot spectral significant components
             ax2.set_title(
-                r'Spectral Significant Components P\n ($P = U*\sqrt{S}$)'
+                'Spectral Significant Components P\n ($P = U*\sqrt{S}$)'
                 )
 
             ax3 = self._figure.add_subplot(133)
             ax3.plot(T)  # plot time series significant componentd
             ax3.set_title(
-                r'Timeseries of Significant Components T\n ($T=\sqrt{S}*V\'$)'
+                'Timeseries of Significant Components T\n ($T=\sqrt{S}*V\'$)'
                 )
 
     def SVDfit(self, components=2, function=None, k0=[], pos=[], C0=[]):
@@ -706,7 +706,7 @@ class Trs(Exp):
             ax2 = self._figure.add_subplot(332)
             ax2.plot(wl, P)  # plot spectral significant components
             ax2.set_title(
-                r'Spectral Significant Components P\n ($P = U * \sqrt{S}$)'
+                'Spectral Significant Components P\n ($P = U * \sqrt{S}$)'
                 )
             ax2.set_ylabel('A.U.')
             ax2.set_xlabel('Wavelength (nm)')
@@ -714,7 +714,7 @@ class Trs(Exp):
             ax3 = self._figure.add_subplot(333)
             ax3.plot(T)  # plot time series significant componentd
             ax3.set_title(
-                r'Timeseries of Significant \
+                'Timeseries of Significant \
                 Components T\n ($T = \sqrt{S}*V\'$)'
                 )
             ax3.set_xlabel('Time (s)')

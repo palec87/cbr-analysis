@@ -24,7 +24,7 @@ copyright = '2021, David Palecek'
 author = 'David Palecek'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = '0.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -35,7 +35,6 @@ release = '0.0.1'
 extensions = ['sphinx.ext.autodoc',
               'recommonmark',
               "sphinx.ext.todo",
-              'nbsphinx',
               "sphinx.ext.napoleon",
               ]
 
@@ -71,4 +70,4 @@ html_theme = 'alabaster'
 html_static_path = ['_static']
 
 # add type of source files
-source_suffix = ['.rst', '.md', '.ipynb']
+source_suffix = ['.rst', '.md']

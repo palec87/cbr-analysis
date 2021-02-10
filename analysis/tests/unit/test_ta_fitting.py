@@ -58,7 +58,7 @@ def test_single_kin(x_axis, par, n_exp):
                           n_exp=n_exp)
     assert fit[0].success == 1
     # getting exaclty right params is not ensured
-    # assert sorted(tuple(np.round(fit[0].x))) == sorted(par)
+    assert sorted(tuple(np.round(fit[0].x))) == sorted(par)
 
 
 @pytest.mark.parametrize('x_axis, par, n_exp, const', [

@@ -344,6 +344,15 @@ def rotation(var, k, pos, T, P, DTT, C0, t, function):
 # ------------- helper functions ----------------------- #
 # ------------------------------------------------------ #
 def nest_data(data):
+    """Nesting of the data for functions which handle both single or multiple
+    data datasets in a form of list/tuple of arrays.
+
+    Args:
+        data (array/list/tuple): x/y data of a single line data, ie. a kinetic
+
+    Returns:
+        list/tuple/array: always nested output.
+    """
     if any(isinstance(i, (list, tuple, np.ndarray))
            for i in data):
         pass   # nested data, do nothing
@@ -353,6 +362,19 @@ def nest_data(data):
 
 
 def duplicate_nesting(x, y):
+    """Ensures the same level of nesting for x and y data. Works for the case
+    when single x axis used for multiple y data, ie. kinetics.
+
+    Args:
+        x (list/tuple/ndarray): x data, nested or not.
+        y (list/tuple/ndarray): y data, nested or not.
+
+    Raises:
+        ValueError: If more x axes than y datasets.
+
+    Returns:
+        tuple/list/ndarray: nested x axes to match y datasets.
+    """
     x = nest_data(x)
     if len(x) == len(y):
         pass
@@ -363,29 +385,42 @@ def duplicate_nesting(x, y):
     return x
 
 
-def cut_limits(x_data: tuple, y_data: tuple, t_lims: tuple):
+def cut_limits(x_data: tuple, y_data: tuple, x_lims: tuple):
+    """Selecting range of x/y data based on x_lims.
+
+    Args:
+        x_data (tuple): x axis data
+        y_data (tuple): y axis values
+        x_lims (tuple): limits to select range from x and y
+
+    Raises:
+        ValueError: If x_lims have wrong shape
+
+    Returns:
+        list: limited x data, limited y data
+    """
     # # extending x axis to match number of datasets.
-    n_dat = len(y_data)
     y_data = nest_data(y_data)
+    n_dat = len(y_data)
     x_data = duplicate_nesting(x_data, y_data)
-    print(n_dat)
+    print(f'number of datasets: {n_dat}.')
     # no limits, take all positive x
     x = []
     data = []
-    if t_lims is None:
+    if x_lims is None:
         for i in range(n_dat):
             x.append(x_data[i][x_data[i] > 0])
             data.append(y_data[i][x_data[i] > 0])
     # x limits global for all kinetics
-    elif len(t_lims) == 2:
+    elif len(x_lims) == 2:
         for i in range(n_dat):
-            beg, end = sup.get_idx(*t_lims, axis=x_data[i])
+            beg, end = sup.get_idx(*x_lims, axis=x_data[i])
             x.append(x_data[i][beg:end+1])
             data.append(y_data[i][beg:end+1])
     # x limits for each kinetic specified
-    elif len(t_lims) == n_dat*2:
+    elif len(x_lims) == n_dat*2:
         for i in range(n_dat):
-            beg, end = sup.get_idx(*t_lims[2*i:2*i+2], axis=x_data[i])
+            beg, end = sup.get_idx(*x_lims[2*i:2*i+2], axis=x_data[i])
             x.append(x_data[i][beg:end+1])
             data.append(y_data[i][beg:end+1])
     else:

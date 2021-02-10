@@ -13,7 +13,7 @@ from analysis.modules import fitting as ft
 
 @pytest.mark.parametrize('x_axis, data, tlim', [
     ([np.linspace(-5, 199, 205)], [np.ones(205)], (10, 20)),  # single datasets
-    (np.linspace(-5, 199, 205), np.ones(205), (10, 20)),
+    (np.linspace(-5, 199, 205), np.ones(205), (9, 19)),
     (np.linspace(-5, 11, 17), np.ones(17), None),
 
     # multiple datasets (list and tuples)

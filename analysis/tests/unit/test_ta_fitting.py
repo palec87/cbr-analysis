@@ -6,8 +6,6 @@
 """
 import pytest
 import numpy as np
-# import matplotlib.pyplot as plt
-# from analysis.experiments.ta import Ta
 from analysis.modules import fitting as ft
 
 
@@ -84,9 +82,14 @@ def test_single_kin02(x_axis, par, n_exp, const):
     data0 = ft.exp_model(par, x_axis, n=n_exp)
     fit = ft.fit_kinetics((x_axis,), (data0,),
                           n_exp=n_exp, const=const)
+<<<<<<< Updated upstream
     assert fit[0].success == 1
     # getting exaclty right params is not ensured
     # assert sorted(tuple(np.round(fit[0].x))) == sorted(par)
+=======
+    print(fit.success)
+    assert sorted(tuple(np.round(fit[0].x))) == sorted(par)
+>>>>>>> Stashed changes
 
 
 @pytest.mark.parametrize('x_axis, n_exp, const', [

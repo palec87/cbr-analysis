@@ -21,15 +21,25 @@ from time import perf_counter
 def fit_kinetics(x_data, y_data,
                  n_exp=1, init_par=None, const=None,
                  **kwargs):
-    '''
-    fits one to few kinetics to sum
-    of exponentials
-    - no models involved.
+    """fits one or few kinetics to sum of exponentials.
+    No models involved.
 
-    Keyword arguments:
-    bounds -- two tuple array
-    '''
-    # print(x_data, y_data)
+    Args:
+        x_data (list/tuple): x axis data
+        y_data (list/tuple): y axis data
+        n_exp (int, optional): Number of exponentials. Defaults to 1.
+        init_par ([type], optional): Set of initial fitting parametres.
+            Defaults to None.
+        const ([type], optional): Selects if const is added as a free
+            parameter. Defaults to None.
+
+    Kwargs:
+        bounds: set of bounds for parameters.
+            Defaults to (-np.inf, np.inf).
+
+    Returns:
+        list: list of least_square fit outputs.
+    """
     bounds = kwargs.get('bounds', (-np.inf, np.inf))
     fit = []
     for j in range(len(x_data)):

@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jun  6 17:14:45 2020
-
-@author: David Palecek
+Support functions for the cbr-analysis package.
 """
 import functools
 import numpy as np
 import os
 import time
 
-print('running support.py')
-
 
 def dict_from_class(cls):
+    """Create dictionary from existing instance of the class
+    where all the attributes are the dictionary keys.
+
+    Returns:
+        dict: class dictionary
+    """
     class S:
         pass
     _excluded_keys = set(S.__dict__.keys())
@@ -24,10 +26,16 @@ def dict_from_class(cls):
 
 
 def get_idx(*vals, axis):
-    '''returns closest index of the 'val'ue along the axis.
-    - axis is time/wavelenght values to be converted to indexes
-    - sets idx to min/max if out of bounds
-    author DP, last change: 28/4/20'''
+    """return closest index of the 'val'ue along the axis. Axis
+    is typically time/wavelenght values to be converted to indices.
+    Sets idx to min/max if out of bounds.
+
+    Args:
+        axis (ndarray): typically WL or time to
+
+    Returns:
+        list: indices of closest values to *vals.
+    """
     idx = [np.argmin(abs(np.array(axis)-val)) for val in vals]
     return idx
 
@@ -36,25 +44,24 @@ def mean_subarray(array: np.ndarray,
                   axis: int,
                   rng=None,
                   ax_data=None) -> np.float or np.ndarray:
-    '''
-    return mean of subarray along 'axis'
+    """Mean array of subarray along 'axis'
     within the 'rng' of values in 'ax_data'.
     Returned array 1 less dimension then 'array'
 
-    Positional arguments:
-    array -- numpy array of dimension
-    axis -- int: along which axis the mean is taken
-    rng -- range of ax_data to be averaged
-        if None, then taken as whole range
-    ax_data -- the rng is applied to this axis
-        has to have len of axis
+    Args:
+        array (np.ndarray): array of dim N
+        axis (int): along which axis mean is taken.
+        rng (list, optional): range of ax_data to be averaged.
+            Defaults to None.
+        ax_data (list/tuple, optional): the rng is applied to this axis
+            has to have len of axis. Defaults to None.
 
-    Return:
-        array of dimension - 1 compared to array
-            float in case of 1D input
+    Returns:
+        np.float or np.ndarray: array of dim N-1 compared to
+            'array': Float in case of 1D input
             subarray on closed interval of rng values
             [rng1, rng2]
-    '''
+    """
     if axis >= len(array.shape):
         print(f'axis with value:{axis} out of array dim:\
               {len(array.shape)}')
@@ -81,8 +88,7 @@ def mean_subarray(array: np.ndarray,
 
 def is_num(obj):
     ''' checking if obj is int/float,
-    if not, return False
-    author DP, last change 28/04/20'''
+    if not, return False'''
     try:
         _ = int(obj)
     except ValueError:
@@ -99,7 +105,6 @@ def is_num(obj):
 def gen_timed_path(folder, name, suffix):
     '''
     return path to saveFolder which contains timeString
-    author DP, last change: 28/4/20
     Parameters
     ----------
     folder : pathlib path

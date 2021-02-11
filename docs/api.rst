@@ -61,7 +61,7 @@ Fitting Class
     :members:
     :show-inheritance:
 
-Fitting Class
+Plotting Class
 ==================
 .. automodule:: analysis.modules.plotting
     :members:

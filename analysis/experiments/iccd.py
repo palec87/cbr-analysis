@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Jun  5 16:19:59 2020
-
-@author: David Palecek
-"""
 from .trs import Trs
 import pathlib as p
-print('running iccd init')
 
 __all__ = ['Iccd']
 
 
 class Iccd(Trs):
+    """iCCD class, child of Trs
+
+    Args:
+        Trs (class): parent class
+    """
     def __init__(self, full_path=None, dir_save=None):
         super().__init__(dir_save)
         self.info = 'iCCD experimental data'
@@ -27,4 +26,5 @@ class Iccd(Trs):
             self.save_path = None
 
     def load_data(self):
-        print(f'loading data {self.path}')
+        raise NotImplementedError
+        # print(f'loading data {self.path}')

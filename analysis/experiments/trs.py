@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Time-resolved spectroscopy (TRS) class.
-"""
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -67,9 +64,8 @@ class Trs(Exp):
 
     @refresh_vals
     def set_t0(self, val: float):
-        """setting t0 by given value
-        If more datasets loaded, It changes
-        t0 for idx's dataset
+        """setting t0 by given value If more datasets
+        loaded, It changes t0 for idx's dataset.
 
         Args:
             val (float): time zero

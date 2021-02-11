@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun  9 11:27:14 2020
 Takes care of various fitting procedures, which do
 similar, but not exactly the same things.
-@author: David Palecek
 """
 
 import numpy as np
@@ -420,14 +418,14 @@ def func(kin, m: float):
 
 
 def ode_solution(p, *args):
-    """Integration of the ODE
+    """Integration of the ODE.
 
     Args:
-        p (list/tuple): ODE params to be fitted
+        p (list/tuple): ODE params to be fitted.
 
-    *args:
-        tuple of parameters for the solve_ivp function,
-        including the ones from the linear fit.
+    args:
+        tuple of parameters for the solve_ivp function, including the
+            ones from the linear fit.
 
     Returns:
         obj: solve_ivp object

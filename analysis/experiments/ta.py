@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-TA spectroscopy data class, child of Trs.
-"""
 import os
 import h5py
 import pathlib as p
@@ -9,7 +6,6 @@ import numpy as np
 
 from .trs import Trs
 
-print('running ta init')
 __all__ = ['Ta']
 
 
@@ -37,6 +33,11 @@ class Ta(Trs):
         print('correct version of analysis.')
 
     def reset_ta(self):
+        """Reloading data after resetting the calculated attributes.
+
+        Raises:
+            RuntimeError: Cannot reset in the case of empty Ta instance
+        """
         if self.path is None:
             raise RuntimeError('empty TA object, cannot reset values')
         else:

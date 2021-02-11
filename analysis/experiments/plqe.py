@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-PLQE spectral analysis data class, child of Static.
-"""
 import os
 import re
 from .static import Static
@@ -16,7 +13,19 @@ __all__ = ['Plqe']
 
 
 class Plqe(Static):
+    """PLQE spectral analysis data class, child of Static.
+
+    Args:
+        Static (class): Static spectroscopy class.
+    """
     def __init__(self, full_path, setup, dir_save=None, **kwargs):
+        """Initialize PLQE
+
+        Args:
+            full_path (purePath):
+            setup ([type]): [description]
+            dir_save ([type], optional): [description]. Defaults to None.
+        """
         super().__init__(dir_save)
         self.info = 'PLQE experimental data'
         self.data_raw = None
@@ -53,6 +62,8 @@ class Plqe(Static):
         print(self.info)
 
     def reset_plqe(self):
+        """Reset PLQE calculated attributes.
+        """
         self.info = None
         self.calibration = None
         self.is_cal = False
@@ -70,15 +81,18 @@ class Plqe(Static):
         self.wl = self.wl_raw.copy()
 
     def load_data(self):
-        '''
-        load three or five dataset of PLQE data
-        - Requires files to be named after convention ON/OFF/NO/BLANK
-        - Determine 3 or 5 files to read
-        author VG, last change: 14/5/20
-        Returns
-        -------
-        None.
-        '''
+        """Loading PLQE data, works for both 3 and 5-file measurement.txt.txt.
+
+        Requires files to be named after convention ON/OFF/NO/BLANK
+
+        Determine 3 or 5 files to read
+
+        author VG
+
+
+        Raises:
+            RuntimeWarning: If other than 3 or 5 files given
+        """
         self.data_list = [k for k in os.listdir(self.dir_path)
                           if ('ON' in k or 'OFF' in k or 'NO' in k)
                           and self.file_type in k]
@@ -169,8 +183,10 @@ class Plqe(Static):
             self.wl_raw = self.wl.copy()
 
     def calibrate(self, **kwargs):
-        '''Author VG last edited 14/5/20'''
-        '''calibrates PLQE data with input calibration file(s)' '''
+        """Calibrates PLQE data with input calibration file(s).
+
+        Author VG
+        """
         if self.is_cal is True:
             print(
                 'Calibration Already Performed, ignoring calibration request'
@@ -224,6 +240,12 @@ class Plqe(Static):
         self.is_cal = True
 
     def combine_plqe(self, combineWL=None):
+        """Combines PLQE files WL ranges.
+
+        Args:
+            combineWL (float, optional): Where to combine the WL.
+                Defaults to None.
+        """
         if type(combineWL) != int:
             self.combine_wl = min(self.wl[:, 1])+50
         else:
@@ -256,9 +278,14 @@ class Plqe(Static):
         self.wl_raw = self.wl.copy()
 
     def rem_bg(self, bg_wl):
-        '''averages the value at WL bgWL+-10nm and subtracts
+        """Averages the value at WL bgWL+-10nm and subtracts
         this from the data to remove a background drift.
-        author VG last edited 01/05/20'''
+
+        author VG
+
+        Args:
+            bg_wl (float): center WL of BG counts calculation.
+        """
         # single number for each spectrum (ON/OFF/NO)
         background = np.mean(self.data_raw[(self.wl_raw > bg_wl-10) &
                                            (self.wl_raw < bg_wl+10), :],
@@ -274,9 +301,17 @@ class Plqe(Static):
             self.data = (self.data / CalibIp[:, None])
 
     def calc_plqe(self, exc_wl=None, pl_wl=None, **kwargs):
-        '''Calculates PLQE for the current data integrating
-        over Ex and PL wls as defined by ExWL and PLWL
-        author VG last edited 18/05/20'''
+        """Calculates PLQE for the current data integrating
+        over Ex and PL wls as defined by exc_wl and pl_wl
+
+        author VG
+
+        Args:
+            exc_wl (tuple, optional): Specify exc. WL, (start,stop)
+                Defaults to None.
+            pl_wl (tuple, optional): Specify PL region, (start,stop).
+                Defaults to None.
+        """
         self.exc_wl = exc_wl
         self.pl_wl = pl_wl
 
@@ -320,6 +355,16 @@ class Plqe(Static):
     @plot.ylims
     @plot.log_yscale
     def plot_plqe(self, **kwargs):
+        """Generates PLQE plot.
+
+        kwargs:
+            xlim (list): set x axis limits [min,max].
+            ylim (list): set y axis limits [min,max].
+            yscale (string): set y scale, log/semilog etc.
+
+        Returns:
+            obj: matplotlib.figure object
+        """
         if self.is_cal is False:
             print('No calibrated performed, plotting raw data.')
             fig = self.plot_plqe_raw(**kwargs)
@@ -341,6 +386,16 @@ class Plqe(Static):
     @plot.ylims
     @plot.log_yscale
     def plot_plqe_raw(self, **kwargs):
+        """Plotting raw data.
+
+        kwargs:
+            xlim (list): set x axis limits [min,max].
+            ylim (list): set y axis limits [min,max].
+            yscale (string): set y scale, log/semilog etc.
+
+        Returns:
+            obj: matplotlib.figure object
+        """
         fig = plt.figure()
         for i in range(self.data_raw.shape[1]):
             plt.plot(self.wl_raw, self.data_raw[:, i], label=self.key[i])

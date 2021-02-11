@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Static spectra data class, child of Exp
-"""
 from .exp import Exp
 
 __all__ = ['Static']
@@ -9,7 +6,7 @@ __all__ = ['Static']
 
 class Static(Exp):
     '''
-    Static experiments class
+    Static experiments class. Child of Exp
     '''
     def __init__(self, dir_save):
         super().__init__(dir_save)

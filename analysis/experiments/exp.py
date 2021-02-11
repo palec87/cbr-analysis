@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Jun  5 19:26:06 2020
-
-@author: David Palecek
-"""
 import pickle
 import os
 from ..helpers import support as sup
@@ -14,7 +9,7 @@ __all__ = ['Exp']
 
 class Exp():
     '''
-    Class of all the experiments which takes care of ini/save...
+    Class of all the experiments. Parent class to all the other.
     '''
     def __init__(self, dir_save=None):
         self.info = f'Class instance of {self.__class__}'
@@ -26,6 +21,11 @@ class Exp():
         self.figure = None
 
     def create_save_path(self):
+        """Generate save_path if it was not specified in loading procedure.
+
+        Returns:
+            pathlib path: path to save any output.
+        """
         if self.save_path is None:
             if os.path.exists(self.dir_path.joinpath('Figs')):
                 print(f'folder {self.dir_path.joinpath("Figs")} exists.')
@@ -39,6 +39,11 @@ class Exp():
         return save_path
 
     def reset_def_vals(self):
+        """Reset dataset to default (after loading)
+
+        Raises:
+            NotImplementedError: So far only for PLQE and Ta
+        """
         from ..experiments.plqe import Plqe
         from analysis.experiments.ta import Ta
         if isinstance(self, Plqe):
@@ -47,19 +52,27 @@ class Exp():
         elif isinstance(self, Ta):
             self.reset_ta()
         else:
-            print(NotImplemented)
+            raise NotImplementedError
 
     def save_project(self):
-        '''
-        saving all attributes of the project
+        """saving all attributes of the project
         into pickle file
+
         TODO: add keyed hashing with 'hmac'
-        '''
+        """
         dict_to_save = sup.dict_from_class(self)
         with open(self.save_path.joinpath('project.pkl'), 'wb') as outfile:
             pickle.dump(dict_to_save, outfile)
 
     def load_project(self, name='project.pkl', path=None):
+        """Load project from a pickle. If not in the 'save_path', then name of the file
+        and path specifies the file.
+
+        Args:
+            name (str, optional): filename. Defaults to 'project.pkl'.
+            path (pathlib path, optional): path to folder of the pickle.
+                Defaults to None.
+        """
         load_path = self._check_path_argument(name, path)
         proj = pickle.load(open(load_path, "rb"))
         self.__dict__.update(proj)
@@ -67,7 +80,7 @@ class Exp():
 
     def save_fig(self, **kwargs):
         '''Saves current figure in self._figure created during plotting.
-        Author VG last edited 18/05/2020'''
+        Author VG last'''
         save_path = kwargs.get('path', self.save_path)
         filetype = kwargs.get('type', 'png')
         name = kwargs.get('name', 'Plot')
@@ -83,6 +96,15 @@ class Exp():
             pickle.dump(self.figure, f)
 
     def _check_path_argument(self, name, path):
+        """Check if the path of the user input is valid.
+
+        Args:
+            name (str): filename
+            path (pathlib): folder path
+
+        Returns:
+            PurePath: absolute path
+        """
         if path is None:
             try:
                 return self.save_path.joinpath(name)

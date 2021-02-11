@@ -8,6 +8,9 @@ import numpy as np
 
 
 class LineBuilder:
+    """Based on mouse clicks on the plot, [x,y] coordinates are taken
+    into a list to generate a line.
+    """
     def __init__(self, line):
         self.line = line
         self.xs = list(line.get_xdata())
@@ -24,6 +27,14 @@ class LineBuilder:
 
 
 def log_xscale(graph):
+    """Wrapper to set xscale of the plots
+
+    Args:
+        graph: matplotlib.figure
+
+    Returns:
+        [type]: matplotlib.figure
+    """
     @functools.wraps(graph)
     def wrapper_log_xscale(*args, **kwargs):
         fig = graph(*args, **kwargs)
@@ -36,6 +47,14 @@ def log_xscale(graph):
 
 
 def log_yscale(graph):
+    """Wrapper to set yscale of the plots
+
+    Args:
+        graph: matplotlib.figure
+
+    Returns:
+        [type]: matplotlib.figure
+    """
     @functools.wraps(graph)
     def wrapper_log_yscale(*args, **kwargs):
         fig = graph(*args, **kwargs)
@@ -48,6 +67,14 @@ def log_yscale(graph):
 
 
 def ylims(graph):
+    """Wrapper to set ylim [min,max] of the plots
+
+    Args:
+        graph: matplotlib.figure
+
+    Returns:
+        [type]: matplotlib.figure
+    """
     @functools.wraps(graph)
     def wrapper_ylims(*args, **kwargs):
         fig = graph(*args, **kwargs)
@@ -60,6 +87,14 @@ def ylims(graph):
 
 
 def xlims(graph):
+    """Wrapper to set xlim [min,max] of the plots
+
+    Args:
+        graph: matplotlib.figure
+
+    Returns:
+        [type]: matplotlib.figure
+    """
     @functools.wraps(graph)
     def wrapper_xlims(*args, **kwargs):
         fig = graph(*args, **kwargs)
@@ -72,6 +107,14 @@ def xlims(graph):
 
 
 def title_plot(graph):
+    """Wrapper to set title of the plot
+
+    Args:
+        graph: matplotlib.figure
+
+    Returns:
+        [type]: matplotlib.figure
+    """
     @functools.wraps(graph)
     def wrapper_title(*args, **kwargs):
         fig = graph(*args, **kwargs)
@@ -84,6 +127,15 @@ def title_plot(graph):
 
 
 def normalize_plot(graph):
+    """Wrapper to normalize lines in the lineplot. Methods so far
+    are: 'max/min/abs/area'
+
+    Args:
+        graph: matplotlib.figure
+
+    Returns:
+        [type]: matplotlib.figure
+    """
     @functools.wraps(graph)
     def wrapper_normalize(*args, **kwargs):
         fig = graph(*args, **kwargs)
@@ -100,6 +152,14 @@ def normalize_plot(graph):
 
 
 def set_cmap(graph):
+    """Wrapper to change matplotlib.cmap of the plot
+
+    Args:
+        graph: matplotlib.figure
+
+    Returns:
+        [type]: matplotlib.figure
+    """
     @functools.wraps(graph)
     def wrapper_set_cmap(*args, **kwargs):
         fig = graph(*args, **kwargs)
@@ -115,6 +175,15 @@ def set_cmap(graph):
 
 
 def normalize_data(data: tuple, method: str) -> tuple:
+    """Normalize lines in the lineplot
+
+    Args:
+        data (tuple): tuple of x and y values
+        method (str): normalization method.
+
+    Returns:
+        tuple: Normalized data
+    """
     if method == 'max':
         data_norm = tuple((kin[0], kin[1] / max(kin[1]))
                           for kin in data)

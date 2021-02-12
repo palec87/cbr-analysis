@@ -27,4 +27,4 @@ class Iccd(Trs):
 
     def load_data(self):
         raise NotImplementedError
-        # print(f'loading data {self.path}')
+        print(f'loading data {self.path}')

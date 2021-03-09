@@ -40,6 +40,32 @@ def get_idx(*vals, axis):
     return idx
 
 
+def despike(arr, slide: int, tol: float):
+    """discards spikes in single spe/kin
+    - not very tested
+
+    Args:
+        arr (np.arrays): 1D or 2D array of
+        slide (int): length of sequence where the spike is searched
+        tol (float): multiple of standard deviation,
+        higher than this will get discarded
+
+    Returns:
+        np.array: smoothed array
+    """
+    arr_new = np.zeros((len(arr)))
+    arr_new[:] = arr[:]
+    for i in range(len(arr_new)-slide):
+        seq = list(arr[i:i+slide])
+        if (any(abs(seq - np.mean(seq)) > tol*np.std(seq))):
+            idx = np.argmax(abs(seq - np.mean(seq)))
+            del seq[idx]
+            arr_new[i+idx] = np.mean(seq)
+        else:
+            pass
+    return arr_new
+
+
 def mean_subarray(array: np.ndarray,
                   axis: int,
                   rng=None,

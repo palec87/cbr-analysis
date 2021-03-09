@@ -322,6 +322,20 @@ class Trs(Exp):
                                      ax_data=self.wl)
             self.kin.append(mean)
 
+    def despike_data(self, axis, slider=10, tol=1):
+        '''Designed for iCCD data to remove spikes from spectra
+        - works for 1D or 2D arrays
+        - inpur slider:
+        - tol: '''
+        if axis == 0:
+            for i in range(self.data.shape[axis]):
+                self.data[i, :] = sup.despike(self.data[i, :], slider, tol)
+        elif axis == 1:
+            for i in range(self.data.shape[axis]):
+                self.data[:, i] = sup.despike(self.data[:, i], slider, tol)
+        else:
+            print('Can despike only 1D/2D arrays.')
+
     @refresh_vals
     def new_average(self, include):
         """include sweeps from binary list:

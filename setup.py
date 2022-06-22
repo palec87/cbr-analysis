@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 requires = [
-    'numpy==1.18.5',
+    'numpy==1.22.0',
     'h5py',
     'pathlib',
     'matplotlib==3.2',
